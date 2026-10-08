@@ -14,7 +14,6 @@ void TUI_Interface::refresh_display(int numArgs, ...) {
     current_input = "";
     cursor_pos = 0;
     num_read = 0;
-    clear_display();
     display_tui(args);
     display_mutex.unlock();
 }
@@ -158,4 +157,9 @@ void TUI_Interface::unfreeze_display() {
 
 std::string TUI_Interface::get_current_input() {
     return current_input;
+}
+
+void TUI_Interface::clear_input() {
+    current_input.clear();
+    cursor_pos = 0;
 }

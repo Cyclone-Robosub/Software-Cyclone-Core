@@ -21,6 +21,8 @@ protected:
     int dev_fd;
     int node_read_pipe_fds[2];  // [0] = read end, [1] = write end. For the node to read from.
     int node_write_pipe_fds[2];  // [0] = read end, [1] = write end. For the node to write from.
+    bool active_heartbeat;
+    rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr dvl_heartbeat_subscriber;
     rclcpp::Subscription<custom_interfaces::msg::VR>::SharedPtr velocity_report_subscriber;
     custom_interfaces::msg::VR most_recent_velocity_report;
     int msg_count;
@@ -42,6 +44,7 @@ protected:
         }
 
         msg_count = 0;
+        active_heartbeat = false;
     }
 
     void TearDown() override {
@@ -182,6 +185,21 @@ protected:
 
     void config_report_callback(custom_interfaces::msg::Config config_report){
         most_recent_config_report = config_report;
+    }
+
+    /*
+    *   Helper function to subscribe to dvl_heartbeat topic and get the heartbeats from dvl
+    */
+    void subscribe_dvl_heartbeat() {
+        dvl_heartbeat_subscriber = node->create_subscription<std_msgs::msg::Empty>("dvl_heartbeat", 10, std::bind(&TestDVLInterface::dvl_heartbeat_callback, this, std::placeholders::_1));
+    }
+    
+    /*
+    *   Helper function for the callback for dvl heartbeat
+    */
+    void dvl_heartbeat_callback(std_msgs::msg::Empty msg) {
+        active_heartbeat = true;
+        (void) msg;
     }
 };
 
@@ -500,6 +518,29 @@ TEST_F(TestDVLInterface, DVLConstruction) {
     spin_thread.join();
     close_dev_fd();
  }
+
+  /**
+ * @brief Test that DVL publishes a heartbeat
+ */
+ TEST_F(TestDVLInterface, DVLHeartbeat) {
+    create_node();
+    subscribe_dvl_heartbeat();
+
+    rclcpp::executors::SingleThreadedExecutor exec;
+    exec.add_node(node);
+
+    auto start = std::chrono::steady_clock::now();
+    auto deadline = start + std::chrono::seconds(2);
+    while (std::chrono::steady_clock::now() < deadline) {
+        exec.spin_some();
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if (std::chrono::steady_clock::now() >= start + std::chrono::seconds(1)) {
+            EXPECT_TRUE(active_heartbeat);
+            return;
+        }
+    }
+}
+
 
  #ifdef ENABLE_TESTING
     int main(int argc, char** argv) {

@@ -189,6 +189,7 @@ int Log_FD::open_file() {
 }
 
 void Echo::refresh_display() {
+    tui->clear_display();
     tui->refresh_display(2, state, finished_reading);
 }
 

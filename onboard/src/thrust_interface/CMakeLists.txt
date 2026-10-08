@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(custom_interfaces REQUIRED)
 find_package(fd_interface REQUIRED)
 
@@ -24,6 +25,7 @@ ament_target_dependencies(thrust_interface
   rclcpp
   custom_interfaces
   std_msgs
+  std_srvs
   fd_interface
 )
 
@@ -42,6 +44,7 @@ if(BUILD_TESTING)
     rclcpp
     custom_interfaces
     std_msgs
+    std_srvs
     fd_interface
   )
   target_include_directories(${PROJECT_NAME}_lib PUBLIC
@@ -61,6 +64,7 @@ if(BUILD_TESTING)
     rclcpp
     custom_interfaces
     std_msgs
+    std_srvs
     fd_interface
   )
 endif()

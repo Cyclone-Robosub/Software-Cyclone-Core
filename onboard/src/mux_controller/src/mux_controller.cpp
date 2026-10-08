@@ -103,6 +103,7 @@ void Mux_Controller::work_loop() {
 }
 
 void Mux_Controller::refresh_display() {
+    tui->clear_display();
     tui->refresh_display(2, no_heartbeat, current_control_mode);
 }
 

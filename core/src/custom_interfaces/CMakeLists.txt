@@ -19,6 +19,7 @@ find_package(nav_msgs REQUIRED)
 # Add msg and srv files
 file(GLOB msg_sources RELATIVE ${PROJECT_SOURCE_DIR} msg/*.msg)
 file(GLOB srv_sources RELATIVE ${PROJECT_SOURCE_DIR} srv/*.srv)
+file(GLOB action_sources RELATIVE ${PROJECT_SOURCE_DIR} action/*.action)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -36,6 +37,7 @@ endif()
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_sources}
   ${srv_sources}
+  ${action_sources}
   DEPENDENCIES geometry_msgs std_msgs sensor_msgs nav_msgs
 )
 

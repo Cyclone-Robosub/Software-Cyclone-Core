@@ -34,6 +34,7 @@ public:
     virtual void freeze_display();
     virtual void unfreeze_display();
     virtual std::string get_current_input();
+    virtual void clear_input();
 
 };
 
