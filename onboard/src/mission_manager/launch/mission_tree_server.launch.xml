@@ -1,8 +1,0 @@
-<launch>
-  <arg name="mission_server" default="true"/>
-
-  <node pkg="mission_manager" exec="mission_manager_node" output="screen">
-    <param from="$(find-pkg-share mission_manager)/config/mission_tree_server.yaml"/>
-  </node>
-
-</launch>
