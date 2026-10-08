@@ -89,12 +89,6 @@ tmux split-window -h -t $DVL_PANE "ros2 run data_logger data_logger; bash"
 CLI_PANE=$(tmux new-window -t $SESSION -n 'cli' -P -F "#{pane_id}" "ros2 run pwm_cli pwm_cli_node; bash")
 
 ################################################################################
-# SECTION 4: Additional Components: mission_manager
-################################################################################
-
-MISSION_MANAGER_PANE=$(tmux new-window -t $SESSION -n 'mission_manager' -P -F "#{pane_id}" "ros2 launch mission_manager mission_tree_server.launch.xml; bash")
-
-################################################################################
 # Attach to Session
 ################################################################################
 
