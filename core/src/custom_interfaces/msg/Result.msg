@@ -1,3 +1,0 @@
-bool success
-char[16] found_object
-bool reached_waypoint_without_detection
