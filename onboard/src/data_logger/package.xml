@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>data_logger</name>
+  <version>0.0.0</version>
+  <description>Logger for DVL and IMU data</description>
+  <maintainer email="wobarber@outlook.com">william</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <test_depend>ament_cmake_ros</test_depend>
+
+  <depend>rclcpp</depend>
+  <depend>custom_interfaces</depend>
+  <depend>std_msgs</depend>
+  <depend>fd_interface</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

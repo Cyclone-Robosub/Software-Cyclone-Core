@@ -1,0 +1,5 @@
+string mission_id
+float64 x_offset
+float64 y_offset
+---
+bool success

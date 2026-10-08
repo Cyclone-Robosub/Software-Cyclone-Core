@@ -1,0 +1,16 @@
+{
+    "ROS2.distro": "jazzy",
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/install/execute/lib/python3.12/site-packages",
+        "${workspaceFolder}/install/custom_interfaces/lib/python3.12/site-packages",
+        "${workspaceFolder}/install/cli/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}install/execute/lib/python3.12/site-packages",
+        "${workspaceFolder}install/custom_interfaces/lib/python3.12/site-packages",
+        "${workspaceFolder}install/cli/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ],
+    "cmake.ignoreCMakeListsMissing": true
+}

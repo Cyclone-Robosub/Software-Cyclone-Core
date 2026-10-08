@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node pkg="data_logger" exec="data_logger" name="data_logger" output="screen"></node>
+</launch>

@@ -1,0 +1,9 @@
+geometry_msgs/Vector3 velocity_data
+float32 altitude
+float32 fom
+float32 time
+std_msgs/Float32MultiArray covariance
+int64 time_of_validity
+int64 time_of_transmission
+uint8 status
+char valid

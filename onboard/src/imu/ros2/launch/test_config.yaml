@@ -1,0 +1,97 @@
+########################
+#
+#  Some semantics/things to note:
+#  - To simplify/reduce topics names, every "level" can have a "topic" which gets appended to the previous level.
+#    If a level doesn't have a "topic", or levels inbetween that don't have topics, nothing gets appended.
+#      -- I'm not sure if "topic" is the best word choice, but...
+#
+#  - The "top" level is really about configuring the EVB/INS, subsequent levels are "object-specific" configuration.
+#    In most cases, these "objects" are essentially sensor, or peripheral-specific, ie, gps1, or evb_radio.
+#    Everything that is related to that "object" should be underneath that level, creating additional levels if needed.
+#    Sensor objects (ins, gps1, mag, etc) will have either a "message" or a "messages" sublevel.
+#    Message means there is only 1 message published for that object, and does not define a "type".
+#    Messages is used when more than one message type can be published, and the label for the subsequent level is
+#    the message type. Messages can have sublevels, with each type being nested under its parent type.
+#
+#  - There are some things that I didn't know where to put, but I think its getting close
+#
+#  - We will assume defaults for all parameters, and the 'example.yaml' outlines those defaults. Anything that is
+#    using the default value should be commented out. As such, the actual example.yaml will have most every line
+#    commented out... I think the only exception is the top-level port... and even it *could* have a default.
+#
+#  - each "Message" or "Messages" nodes have a "topic" element. Should this topic value default to the coded value,
+#    or can it default to the parent node's name?  (ie, "raw/topic" will default to "raw".)
+#
+#  - I've called out specific things with FIXME's.  These should highlight in your IDE.
+#
+########################
+
+
+topic: "inertialsense"
+port: [/dev/serial/by-id/usb-STMicroelectronics_STM32_Virtual_ComPort_205D36773430-if00]
+baudrate: 921600
+enable_log: false
+publishTf: true                                 # Publish Transform Frame (TR)
+frame_id: ""                                    # FIXME: What is this?  is it just the FrameID to use in the ROS messages?
+mag_declination: 0.0
+ref_lla: [0.0, 0.0, 0.0]
+# factory_reset: true                             # Reset flash config to factory defaults on startup.
+
+# Hardware platform specifying the IMX carrier board type (i.e. EVB-2) and configuration bits (see ePlatformConfig).  The platform type is used to simplify the GPS and I/O configuration process.
+# platform: 10                                    # PLATFORM_CFG_TYPE_RUG3_G2
+# platform: 11                                    # PLATFORM_CFG_TYPE_EVB2_G2
+# platform: 15                                    # PLATFORM_CFG_TYPE_IG1_G2
+
+# Overwrite IMX ioConfig (see eIoConfig)
+# Set DID_FLASH_CONFIG.ioConfig: 0x025c2060
+# Set DID_FLASH_CONFIG.platformConfig: 0x0000000c
+# Set DID_FLASH_CONFIG.RTKCfgBits: 0x00000400
+# ioConfig: 0x026ca060      # EVB2: GPS1 Ser1 F9P, GPS2 Ser2 F9P, PPS G8
+# ioConfig: 0x025CA060      # EVB2: GPS1 Ser1 F9P, GPS2 Ser0 F9P, PPS G8
+# ioConfig: 0x0244a060      # EVB2: GPS1 Ser1 F9P, GPS2 disabled F9P, PPS G8
+
+# Service Points - should we allow these?  Or should they always be hardcoded?
+# service_endpoints:
+  # REF_LLA: "set_refLLA"                         # /value /current
+  # MAG_CAL: "mag_cal"                            # /single /multi
+  # FIRMWARE: "firmware"                          # /get /update
+
+# Publish the firmware upgrade progress/status
+firmware_status:
+  message:
+    topic: "firmware_status"
+    enable: true
+
+transform_frame:
+  # static_transform:
+  message:
+    topic: ""
+    enable: true
+
+ins:
+  rotation: [0, 0, 0]                           # Rotation in radians about the X,Y,Z axes from Sensor Frame to Intermediate Output Frame.  Order applied: Z,Y,X.
+  offset: [0, 0 ,0]                             # X,Y,Z offset in meters from Intermediate Output Frame to INS Output Frame.
+  navigation_dt_ms: 16                          # EKF update period.  IMX-5:  16 default, 8 max.  Use `msg/ins.../period` to reduce INS output data rate.
+  # navigation_dt_ms: 4                           # EKF update period.  uINS-3: 4  default, 1 max.  Use `msg/ins.../period` to reduce INS output data rate.
+  dynamic_model: 4                              # FIXME: these should be named types/srtring (PORTABLE, STATIONARY, AGV, UAV, etc)
+  enable_covariance: false                      # Include covariance data in odom_ins_... messages
+  messages:
+    did_ins1:
+      topic: "ins_eul_uvw_ned"
+      enable: true
+
+sensors:
+  messages:  
+    imu:              # Publish IMU angular rates and linear acceleration
+      topic: "imu"
+      enable: true
+      period: 1
+    pimu:             # Publish preintegrated IMU delta theta and delta velocity
+      topic: "pimu"
+      enable: true
+      period: 1
+    magnetometer:
+      topic: "mag"
+      enable: true
+      period: 1
+
