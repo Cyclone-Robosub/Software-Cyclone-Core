@@ -14,20 +14,22 @@
 /* Abstract base class representing a generic Command executed in the course of a mission */
 class Command {
 public:
-    Command(std::unique_ptr<Command> next, std::unique_ptr<Command> failure);
+    Command(std::shared_ptr<Command> next, std::shared_ptr<Command> failure);
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() = 0;
+    virtual std::shared_ptr<Command> get_next();
+    virtual std::shared_ptr<Command> get_failure();
 
 protected:
-    std::unique_ptr<Command> next;
-    std::unique_ptr<Command> failure;
+    std::shared_ptr<Command> next;
+    std::shared_ptr<Command> failure;
 };
 
 class DriveToWorldWaypoint : public Command {
 public:
     DriveToWorldWaypoint(
-        std::unique_ptr<Command> next,
-        std::unique_ptr<Command> failure,
+        std::shared_ptr<Command> next,
+        std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
@@ -48,8 +50,8 @@ protected:
 class DriveToWorldWaypointSeeking : public Command {
 public:
     DriveToWorldWaypointSeeking(
-        std::unique_ptr<Command> next,
-        std::unique_ptr<Command> failure,
+        std::shared_ptr<Command> next,
+        std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         uint8_t object_id,
@@ -69,7 +71,7 @@ protected:
 
 class Idle : public Command {
 public:
-    Idle(std::unique_ptr<Command> next, std::unique_ptr<Command> failure);
+    Idle(std::shared_ptr<Command> next, std::shared_ptr<Command> failure);
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
 };
@@ -77,8 +79,8 @@ public:
 class TrackObjectWaypoint : public Command {
 public:
     TrackObjectWaypoint(
-        std::unique_ptr<Command> next,
-        std::unique_ptr<Command> failure,
+        std::shared_ptr<Command> next,
+        std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> tracking_position,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
@@ -101,8 +103,8 @@ protected:
 class DurationTrick : public Command {
 public:
     DurationTrick(
-        std::unique_ptr<Command> next,
-        std::unique_ptr<Command> failure,
+        std::shared_ptr<Command> next,
+        std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         std::array<uint8_t,16> trick_id,
@@ -123,8 +125,8 @@ protected:
 class DistanceTrick: public Command {
 public:
     DistanceTrick(
-        std::unique_ptr<Command> next,
-        std::unique_ptr<Command> failure,
+        std::shared_ptr<Command> next,
+        std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> destination_position,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
