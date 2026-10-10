@@ -62,7 +62,7 @@ protected:
     std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
     uint8_t object_id;
     double confidence_required;
-    std::array<char,16> trick_id = {'\0'};
+    std::array<char,16> trick_id;
 };
 
 class Idle : public Command {
@@ -92,7 +92,7 @@ protected:
     std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
     uint8_t object_id;
     double hold_time;
-    std::array<char,16> trick_id = {'\0'};
+    std::array<char,16> trick_id;
 };
 
 class DurationTrick : public Command {
