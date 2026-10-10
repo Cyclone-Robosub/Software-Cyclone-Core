@@ -30,16 +30,18 @@ public:
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
-        double hold_time
+        double hold_time,
+        std::array<char,16> trick_id = {'\0'}
     );
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
 
 protected:
-   std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint;
-   std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
-   std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
-   double hold_time;
+    std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint;
+    std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
+    std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
+    double hold_time;
+    std::array<char,16> trick_id;
 };
 
 class DriveToWorldWaypointSeeking : public Command {
@@ -48,17 +50,19 @@ public:
         std::unique_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
-        std::array<char,16> object_id,
-        double confidence_required
+        uint8_t object_id,
+        double confidence_required,
+        std::array<char,16> trick_id = {'\0'}
     );
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
 
 protected:
-   std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint;
-   std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
-   std::array<char,16> object_id;
-   double confidence_required;
+    std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint;
+    std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
+    uint8_t object_id;
+    double confidence_required;
+    std::array<char,16> trick_id = {'\0'};
 };
 
 class Idle : public Command {
@@ -75,18 +79,20 @@ public:
         std::unique_ptr<custom_interfaces::msg::Pose6D> tracking_position,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
-        std::array<char,16> object_id,
-        double hold_time
+        uint8_t object_id,
+        double hold_time,
+        std::array<char,16> trick_id = {'\0'}
     );
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
 
 protected:
-   std::unique_ptr<custom_interfaces::msg::Pose6D> tracking_position;
-   std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
-   std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
-   std::array<char,16> object_id;
-   double hold_time;
+    std::unique_ptr<custom_interfaces::msg::Pose6D> tracking_position;
+    std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
+    std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
+    uint8_t object_id;
+    double hold_time;
+    std::array<char,16> trick_id = {'\0'};
 };
 
 class DurationTrick : public Command {
@@ -103,11 +109,11 @@ public:
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
 
 protected:
-   std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
-   std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
-   std::array<char,16> trick_id;
-   double hold_time;
-   double duration;
+    std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
+    std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
+    std::array<char,16> trick_id;
+    double hold_time;
+    double duration;
 };
 
 class DistanceTrick: public Command {
@@ -124,11 +130,11 @@ public:
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
 
 protected:
-   std::unique_ptr<custom_interfaces::msg::Pose6D> destination_position;
-   std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
-   std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
-   std::array<char,16> trick_id;
-   double hold_time;
+    std::unique_ptr<custom_interfaces::msg::Pose6D> destination_position;
+    std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
+    std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
+    std::array<char,16> trick_id;
+    double hold_time;
 };
 
 #endif // COMMAND_HPP
