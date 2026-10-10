@@ -1,0 +1,7 @@
+<!-- Nothing to see here yet. This would contain the definition for a single mission. -->
+<!-- My idea is for files to first contain definitions of each manouver, then at the end write out the tree listing how they connect together. -->
+<!-- This allows the parser to construct Command object for each manouver, then join them together after construction. -->
+<!-- They could theoretically be defined inline, but I think that would make the files very verbose, cluttered, and difficult to read. -->
+<!-- Currently, manouvers with the same name would be referenced **within** a file, but not **between** files. -->
+<!-- A cool feature would be the ability to include an optional "global" reference flag that could have a reference between files. -->
+<!-- That might be tricky to implement so I will leave it alone for now, but it could be useful (for example if many missions reference first moving through the gate).-->

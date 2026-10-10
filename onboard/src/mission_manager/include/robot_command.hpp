@@ -11,14 +11,21 @@
 
 #include "waypoint.hpp"
 
+// TODO: add timeout field to commands (not sent via ROS, but used locally)
+// TODO: add name (again, not sent to ROS)
+
 /* Abstract base class representing a generic Command executed in the course of a mission */
 class Command {
 public:
+    Command();
     Command(std::shared_ptr<Command> next, std::shared_ptr<Command> failure);
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() = 0;
     virtual std::shared_ptr<Command> get_next();
     virtual std::shared_ptr<Command> get_failure();
+    virtual void set_next(std::shared_ptr<Command> command);
+    virtual void set_failure(std::shared_ptr<Command> command);
+    virtual bool mission_complete();
 
 protected:
     std::shared_ptr<Command> next;
@@ -142,6 +149,25 @@ protected:
     std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
     std::array<uint8_t,16> trick_id;
     double hold_time;
+};
+
+/* Special Commands */
+
+/* The start of every decision tree. Can be treated as an Idle if desired. */
+class Root: public Command {
+public:
+    Root(std::shared_ptr<Command> next);
+
+    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
+};
+
+/* Included as the final node reached in any decision tree. Can be treated as an Idle if desired. */
+class Finish : public Command {
+public:
+    Finish();
+
+    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
+    virtual bool mission_complete() override;
 };
 
 #endif // COMMAND_HPP
