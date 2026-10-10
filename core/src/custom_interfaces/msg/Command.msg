@@ -27,7 +27,7 @@ float64 hold_time
 uint8 object_id
 float64 confidence_required
 
-# Used for ALL commands, primarily for DURATION_TRICK and DISTANCE_TRICK
+# Used for ALL commands except IDLE, primarily for DURATION_TRICK and DISTANCE_TRICK
 char[16] trick_id
 
 # Used for DURATION_TRICK
