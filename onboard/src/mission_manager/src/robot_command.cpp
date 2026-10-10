@@ -1,20 +1,28 @@
 #include "robot_command.hpp"
 
-Command::Command(std::unique_ptr<Command> next, std::unique_ptr<Command> failure) :
+Command::Command(std::shared_ptr<Command> next, std::shared_ptr<Command> failure) :
     next(std::move(next)), failure(std::move(failure)) {
         // intentionally blank
 }
 
+std::shared_ptr<Command> Command::get_next() {
+    return next;
+}
+
+std::shared_ptr<Command> Command::get_failure() {
+    return failure;
+}
+
 DriveToWorldWaypoint::DriveToWorldWaypoint(
-        std::unique_ptr<Command> next,
-        std::unique_ptr<Command> failure,
+        std::shared_ptr<Command> next,
+        std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         double hold_time,
-        std::array<char,16> trick_id = {'\0'}
+        std::array<uint8_t,16> trick_id = {'\0'}
     ) :
-    Command(std::move(next), std::move(failure)),
+    Command(next, failure),
     goal_waypoint(std::move(goal_waypoint)),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
@@ -35,15 +43,15 @@ std::unique_ptr<custom_interfaces::msg::Command> DriveToWorldWaypoint::get_ros2_
 }
 
 DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
-        std::unique_ptr<Command> next,
-        std::unique_ptr<Command> failure,
+        std::shared_ptr<Command> next,
+        std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         uint8_t object_id,
         double confidence_required,
-        std::array<char,16> trick_id = {'\0'}
+        std::array<uint8_t,16> trick_id = {'\0'}
     ) :
-    Command(std::move(next), std::move(failure)),
+    Command(next, failure),
     goal_waypoint(std::move(goal_waypoint)),
     waypoint_mask(std::move(waypoint_mask)),
     object_id(object_id),
@@ -61,5 +69,18 @@ std::unique_ptr<custom_interfaces::msg::Command> DriveToWorldWaypointSeeking::ge
     command_msg->object_id = object_id;
     command_msg->confidence_required = confidence_required;
     command_msg->trick_id = trick_id;
+    return command_msg;
 }
+
+Idle::Idle(std::shared_ptr<Command> next, std::shared_ptr<Command> failure) :
+    Command(next, failure) {
+        // intentionally blank
+}
+
+std::unique_ptr<custom_interfaces::msg::Command> Idle::get_ros2_message() {
+    auto command_msg = std::make_unique<custom_interfaces::msg::Command>();
+    command_msg->command = command_msg->IDLE;
+    return command_msg;
+}
+
 
