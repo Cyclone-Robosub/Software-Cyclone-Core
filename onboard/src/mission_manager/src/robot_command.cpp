@@ -1,5 +1,9 @@
 #include "robot_command.hpp"
 
+Command::Command() : next(std::make_shared<Finish>()), failure(std::make_shared<Finish>()) {
+    // intentionally blank
+}
+
 Command::Command(std::shared_ptr<Command> next, std::shared_ptr<Command> failure) :
     next(std::move(next)), failure(std::move(failure)) {
         // intentionally blank
@@ -11,6 +15,17 @@ std::shared_ptr<Command> Command::get_next() {
 
 std::shared_ptr<Command> Command::get_failure() {
     return failure;
+}
+
+void Command::set_next(std::shared_ptr<Command> command) {
+    next = command;
+}
+void Command::set_failure(std::shared_ptr<Command> command) {
+    failure = command;
+}
+
+bool Command::mission_complete() {
+    return false;
 }
 
 DriveToWorldWaypoint::DriveToWorldWaypoint(
@@ -172,5 +187,26 @@ std::unique_ptr<custom_interfaces::msg::Command> DistanceTrick::get_ros2_message
     command_msg->hold_time = hold_time;
 }
 
+Root::Root(std::shared_ptr<Command> next) : Command(next, std::make_shared<Root>()) {
+    // intentionally blank
+}
 
+std::unique_ptr<custom_interfaces::msg::Command> Root::get_ros2_message() {
+    auto command_msg = std::make_unique<custom_interfaces::msg::Command>();
+    command_msg->command = command_msg->IDLE;
+    return command_msg;
+}
 
+Finish::Finish() : Command(std::make_shared<Finish>(), std::make_shared<Finish>()) {
+    // intentionally blank
+}
+
+std::unique_ptr<custom_interfaces::msg::Command> Finish::get_ros2_message() {
+    auto command_msg = std::make_unique<custom_interfaces::msg::Command>();
+    command_msg->command = command_msg->IDLE;
+    return command_msg;
+}
+
+bool Finish::mission_complete() {
+    return true;
+}
