@@ -17,7 +17,7 @@ private:
     std::unique_ptr<MissionFileParser> parser;
     std::vector<std::shared_ptr<Root>> missions;
 
-    bool status_received;
+    volatile bool status_received;
     bool command_successful;
     bool ready;
     bool missions_running;
