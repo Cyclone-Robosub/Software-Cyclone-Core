@@ -3,6 +3,7 @@
 using namespace std::chrono_literals;
 using namespace rclcpp;
 #include <iostream>
+#include <sys/time.h>
 
 Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd, 
                          std::unique_ptr<FD_Interface> vr_fd,
@@ -174,7 +175,13 @@ std::string Data_Logger::get_current_time() {
     std::time(&rawtime);
     timeinfo = std::localtime(&rawtime);
     std::strftime(buffer,80,"%Y-%m-%d-%H-%M-%S",timeinfo);
+
+    struct timespec current_time_for_milliseconds;
+    clock_gettime(CLOCK_MONOTONIC, &current_time_for_milliseconds);
+    long milliseconds = current_time_for_milliseconds.tv_nsec / 1000000;
+
     std::string cpp_time = buffer;
+    cpp_time += "-" + std::to_string(milliseconds);
     return cpp_time;
 }
 
