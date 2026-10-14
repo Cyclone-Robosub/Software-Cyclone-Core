@@ -22,6 +22,17 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
         // TODO: service to dynamically parse mission file
 }
 
+void MissionManager::work_loop() {
+    while (rclcpp::ok()) {
+        if (go) {
+            go = false;
+            missions_running = true; // TODO: mutex
+            run_missions(); // NOTE: blocks thread
+        }
+        usleep(100); // Prevent hogging CPU. Probably a better solution exists. Maybe sleep this thread?
+    }
+}
+
 void MissionManager::run_missions() {
     RCLCPP_INFO(this->get_logger(), "Running mission...");
     sleep(1000); // TODO REMOVE ME!!!
@@ -80,12 +91,11 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
     */
     (void)signal; // stop compiler complaining
     if (missions_running) {
-        RCLCPP_WARN(this->get_logger(), "Missions already running. Go signal ignored.");
-        // TODO: interrupt mission instead of warning? Might need some granularity for if a mission is running/complete vs all missions complete.
+        RCLCPP_WARN(this->get_logger(), "Missions already running. Pause/resume functionality not implemented.");
+        return;
     }
     if (ready) {
-        missions_running = true; // TODO: a mutex here
-        run_missions();
+        go = true;
     } else {
         RCLCPP_WARN(this->get_logger(), "Go signal pressed but not ready. Ignoring.");
     }
@@ -99,12 +109,21 @@ void MissionManager::heartbeat_callback() {
 
 /* We can optionally queue some mission files initially, and also load them dynamically afterwards via ROS2 calls */
 int main(int argc, char * argv[]) {
+    rclcpp::init(argc, argv);
     auto parser = std::make_unique<MissionFileParser>();
     parser->parse_files();
 
-    rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<MissionManager>(std::move(parser)));
+    auto mission_manager = std::make_shared<MissionManager>(std::move(parser));
+    
+    std::thread ros_thread([&]() { // Needs to be seperate thread so that work loop can run
+        rclcpp::spin(mission_manager);
+    });
+
+    mission_manager->work_loop();
     rclcpp::shutdown();
+
+    ros_thread.join();
+
     return 0;
 }
 
