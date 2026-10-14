@@ -1,0 +1,17 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "cyclone-mission-file-schema",
+    "title": "MissionFile",
+    "description": "A single mission file, including command definitions and the command tree.",
+    "type": "object",
+    "properties": {
+        "commands": {
+            "type": "array",
+            "items": {
+                "$ref": "cyclone-command"
+            }
+        },
+        "command_tree" : {"type": "object"}
+    },
+    "required": ["command_tree"]
+}
