@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(custom_interfaces REQUIRED)
 
 # Include directories
@@ -18,10 +19,16 @@ include_directories(
 )
 
 # add executable
-add_executable(mission_manager src/mission_manager.cpp)
+add_executable(mission_manager 
+  src/mission_manager.cpp
+  src/robot_command.cpp
+  src/mission_file_parser.cpp
+  )
+
 ament_target_dependencies(mission_manager 
   rclcpp 
   std_msgs
+  std_srvs
   custom_interfaces
   )
 
@@ -33,11 +40,16 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   
   # Create a library from the source for testing (WITH ENABLE_TESTING defined)
-  add_library(${PROJECT_NAME}_lib src/mission_manager.cpp)
+  add_library(${PROJECT_NAME}_lib 
+    src/mission_manager.cpp
+    src/robot_command.cpp
+    src/mission_file_parser.cpp
+    )
   target_compile_definitions(${PROJECT_NAME}_lib PUBLIC ENABLE_TESTING)
   ament_target_dependencies(${PROJECT_NAME}_lib
     rclcpp
     std_msgs
+    std_srvs
     custom_interfaces
   )
   target_include_directories(${PROJECT_NAME}_lib PUBLIC
@@ -56,6 +68,7 @@ if(BUILD_TESTING)
   ament_target_dependencies(${PROJECT_NAME}_test
     rclcpp
     std_msgs
+    std_srvs
     custom_interfaces
   )
 endif()

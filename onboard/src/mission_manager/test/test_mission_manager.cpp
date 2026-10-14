@@ -2,6 +2,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "mission_manager.hpp"
+#include "mission_file_parser.hpp"
 
 class TestSubscriber : public ::testing::Test {
 protected:
@@ -18,7 +19,7 @@ protected:
     }
 
     void create_node() {
-        node = std::make_shared<MissionManager>();
+        node = std::make_shared<MissionManager>(std::move(std::make_unique<MissionFileParser>()));
     }
 };
 
