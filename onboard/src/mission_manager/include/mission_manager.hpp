@@ -11,8 +11,10 @@
 class MissionManager : public rclcpp::Node {
 public:
     MissionManager(std::unique_ptr<MissionFileParser> parser);
+    void work_loop();
 
 private:
+    /* Runs in a seperate thread so that mission triggering can happen independently */
     void run_missions();
     void pub_ready_status();
 
@@ -44,6 +46,7 @@ private:
     volatile bool status_received;
     bool command_successful;
     volatile bool ready;
+    volatile bool go;
     bool missions_running;
 };
 
