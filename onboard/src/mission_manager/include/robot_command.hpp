@@ -3,7 +3,6 @@
 
 #include <memory>
 
-#include "rclcpp.hpp"
 #include "custom_interfaces/msg/command.hpp"
 #include "custom_interfaces/msg/pose6_d.hpp"
 #include "custom_interfaces/msg/pose6_d_mask.hpp"
@@ -34,6 +33,7 @@ protected:
 
 class DriveToWorldWaypoint : public Command {
 public:
+    DriveToWorldWaypoint();
     DriveToWorldWaypoint(
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
@@ -56,6 +56,7 @@ protected:
 
 class DriveToWorldWaypointSeeking : public Command {
 public:
+    DriveToWorldWaypointSeeking();
     DriveToWorldWaypointSeeking(
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
@@ -78,6 +79,7 @@ protected:
 
 class Idle : public Command {
 public:
+    Idle();
     Idle(std::shared_ptr<Command> next, std::shared_ptr<Command> failure);
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
@@ -85,6 +87,7 @@ public:
 
 class TrackObjectWaypoint : public Command {
 public:
+    TrackObjectWaypoint();
     TrackObjectWaypoint(
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
@@ -109,6 +112,7 @@ protected:
 
 class DurationTrick : public Command {
 public:
+    DurationTrick();
     DurationTrick(
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
@@ -131,6 +135,7 @@ protected:
 
 class DistanceTrick: public Command {
 public:
+    DistanceTrick();
     DistanceTrick(
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
@@ -156,6 +161,7 @@ protected:
 /* The start of every decision tree. Can be treated as an Idle if desired. */
 class Root: public Command {
 public:
+    Root();
     Root(std::shared_ptr<Command> next);
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
