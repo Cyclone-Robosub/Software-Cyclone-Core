@@ -7,6 +7,7 @@
 #include "std_srvs/srv/trigger.hpp"
 #include "robot_command.hpp"
 #include "mission_file_parser.hpp"
+#include <mutex>
 
 class MissionManager : public rclcpp::Node {
 public:
@@ -43,11 +44,12 @@ private:
     std::unique_ptr<MissionFileParser> parser;
     std::vector<std::shared_ptr<Root>> missions;
 
+    std::mutex initiate_mission_mutex;
     volatile bool status_received;
-    bool command_successful;
+    volatile bool command_successful;
     volatile bool ready;
     volatile bool go;
-    bool missions_running;
+    volatile bool missions_running;
 };
 
 #endif // MISSION_MANAGER_HPP

@@ -26,21 +26,18 @@ void MissionManager::work_loop() {
     while (rclcpp::ok()) {
         if (go) {
             go = false;
-            missions_running = true; // TODO: mutex
+            missions_running = true;
+            initiate_mission_mutex.unlock();
             run_missions(); // NOTE: blocks thread
+            initiate_mission_mutex.lock();
+            missions_running = false;
+            initiate_mission_mutex.unlock();
         }
         usleep(100); // Prevent hogging CPU. Probably a better solution exists. Maybe sleep this thread?
     }
 }
 
 void MissionManager::run_missions() {
-    RCLCPP_INFO(this->get_logger(), "Running mission...");
-    sleep(1000); // TODO REMOVE ME!!!
-    if (missions_running) {
-        RCLCPP_WARN(this->get_logger(), "Missions already running. Ignoring call to run_missions().");
-        return;
-    }
-
     missions = parser->get_parsed_missions();
     if (missions.size() < 1) {
         RCLCPP_WARN(this->get_logger(), "No files loaded! No missions will be run.");
@@ -90,14 +87,18 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
      * could switch this to ::Empty or even to a trigger service. 
     */
     (void)signal; // stop compiler complaining
+    initiate_mission_mutex.lock();
     if (missions_running) {
         RCLCPP_WARN(this->get_logger(), "Missions already running. Pause/resume functionality not implemented.");
+        initiate_mission_mutex.unlock();
         return;
     }
     if (ready) {
         go = true;
+        // mutex unlocked in work loop
     } else {
         RCLCPP_WARN(this->get_logger(), "Go signal pressed but not ready. Ignoring.");
+        initiate_mission_mutex.unlock();
     }
 }
 
