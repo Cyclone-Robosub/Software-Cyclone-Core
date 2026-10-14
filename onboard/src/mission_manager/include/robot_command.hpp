@@ -173,6 +173,8 @@ public:
     Finish();
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
+    virtual std::shared_ptr<Command> get_next() override;
+    virtual std::shared_ptr<Command> get_failure() override;
     virtual bool mission_complete() override;
 };
 
