@@ -226,7 +226,7 @@ std::unique_ptr<custom_interfaces::msg::Command> Root::get_ros2_message() {
     return command_msg;
 }
 
-Finish::Finish() : Command(std::make_shared<Finish>(), std::make_shared<Finish>()) {
+Finish::Finish() : Command(nullptr, nullptr) {
     // intentionally blank
 }
 
@@ -234,6 +234,14 @@ std::unique_ptr<custom_interfaces::msg::Command> Finish::get_ros2_message() {
     auto command_msg = std::make_unique<custom_interfaces::msg::Command>();
     command_msg->command = command_msg->IDLE;
     return command_msg;
+}
+
+std::shared_ptr<Command> Finish::get_next() {
+    return std::make_shared<Finish>();
+}
+
+std::shared_ptr<Command> Finish::get_failure() {
+    return std::make_shared<Finish>();
 }
 
 bool Finish::mission_complete() {
