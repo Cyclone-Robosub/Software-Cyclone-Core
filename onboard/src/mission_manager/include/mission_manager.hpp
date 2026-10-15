@@ -42,7 +42,6 @@ private:
     rclcpp::TimerBase::SharedPtr heartbeat_timer;
 
     std::unique_ptr<MissionFileParser> parser;
-    std::vector<std::shared_ptr<Root>> missions;
 
     std::mutex initiate_mission_mutex;
     volatile bool status_received;

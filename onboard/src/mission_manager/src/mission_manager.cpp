@@ -38,13 +38,13 @@ void MissionManager::work_loop() {
 }
 
 void MissionManager::run_missions() {
-    missions = parser->get_parsed_missions();
-    if (missions.size() < 1) {
-        RCLCPP_WARN(this->get_logger(), "No files loaded! No missions will be run.");
+    if (!parser->new_mission_available()) {
+        RCLCPP_WARN(this->get_logger(), "No missions available! No missions will be run. Were any files parsed?");
         return;
     }
 
-    for (std::shared_ptr<Root> mission_root : missions) {
+    while (parser->new_mission_available()) {
+        std::shared_ptr<Root> mission_root = parser->get_next_mission();
         std::shared_ptr<Command> current_command = mission_root->get_next();
         while (!(current_command->mission_complete())) {
             auto current_command_msg = current_command->get_ros2_message();

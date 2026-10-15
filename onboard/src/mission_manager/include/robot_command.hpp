@@ -29,6 +29,8 @@ public:
 protected:
     std::shared_ptr<Command> next;
     std::shared_ptr<Command> failure;
+    std::string name; // TODO: add to constructors
+    double timeout; // TODO: add to constructors
 };
 
 class DriveToWorldWaypoint : public Command {
