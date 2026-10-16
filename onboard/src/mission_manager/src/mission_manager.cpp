@@ -46,10 +46,10 @@ void MissionManager::run_missions() {
 
     // First mission is root: call get_next() on that to get first real command
     std::shared_ptr<Command> current_command = parser->get_next_mission()->get_next();
-    while (!(current_command->mission_complete())) {
+    while (!(current_command->mission_complete()) && rclcpp::ok()) {
         auto current_command_msg = current_command->get_ros2_message();
         command_publisher->publish(*current_command_msg);
-        while (!status_received) {
+        while (!status_received && rclcpp::ok()) {
             if (false) { // TODO: check timeout
                 current_command = current_command->get_failure();
                 command_successful = false; // TODO: add status update mutex for this and status_received
