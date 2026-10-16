@@ -1,5 +1,7 @@
 #include "robot_command.hpp"
 
+using namespace std::chrono_literals;
+
 Command::Command() :
     next(std::make_shared<Finish>()),
     failure(std::make_shared<Finish>()),
@@ -38,6 +40,14 @@ void Command::set_failure(std::shared_ptr<Command> command) {
 
 bool Command::mission_complete() {
     return false;
+}
+
+bool Command::timeout_exceeded(std::chrono::time_point<std::chrono::steady_clock> start_time) {
+    if (timeout < 0) {
+        return false;
+    }
+    std::chrono::time_point now = std::chrono::steady_clock::now();
+    return now > (start_time + (timeout * 1000 * 1ms));
 }
 
 DriveToWorldWaypoint::DriveToWorldWaypoint(
@@ -144,7 +154,7 @@ Idle::Idle(std::shared_ptr<Command> next, std::shared_ptr<Command> failure, doub
         // intentionally blank
 }
 
-Idle::Idle(double duration) : Command(), duration(duration) {
+Idle::Idle(double duration) : Command(duration + 1), duration(duration) {
     // intentionally blank
 }
 
