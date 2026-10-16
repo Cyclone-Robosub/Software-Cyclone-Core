@@ -62,7 +62,7 @@ void MissionManager::run_missions() {
                 break;
             }
             if (cancel_mission) {
-                auto idle_command_msg = std::make_shared<Idle>()->get_ros2_message();
+                auto idle_command_msg = std::make_shared<Idle>(0)->get_ros2_message();
                 command_publisher->publish(*idle_command_msg);
                 return;
             }
@@ -78,6 +78,7 @@ void MissionManager::run_missions() {
         timed_out = false;
         status_mutex.unlock();
     }
+    RCLCPP_INFO(this->get_logger(), "Mission complete!");
 }
 
 void MissionManager::pub_ready_status() {
