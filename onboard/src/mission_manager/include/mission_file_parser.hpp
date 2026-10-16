@@ -24,6 +24,7 @@ private:
     std::unique_ptr<custom_interfaces::msg::Pose6DMask> make_waypoint_mask(json parameters_field);
     std::unique_ptr<custom_interfaces::msg::Tolerance6D> make_tolerance(json parameters_field);
     std::array<uint8_t,16> string_to_array(std::string string);
+    std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> parse_tree(json tree, std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> registry);
 
     std::vector<std::string> files_to_parse;
     std::vector<std::string> files_not_yet_parsed;
