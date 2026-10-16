@@ -5,6 +5,7 @@
 #include "std_msgs/msg/bool.hpp"
 #include "std_msgs/msg/empty.hpp"
 #include "std_srvs/srv/trigger.hpp"
+#include "custom_interfaces/msg/command_result.hpp"
 #include "robot_command.hpp"
 #include "mission_file_parser.hpp"
 #include <mutex>
@@ -22,6 +23,7 @@ private:
     void trigger_ready_signal(const std::shared_ptr<std_srvs::srv::Trigger::Request> request, std::shared_ptr<std_srvs::srv::Trigger::Response> response);
     void pub_ready_status_from_service(const std::shared_ptr<std_srvs::srv::Trigger::Request> request, std::shared_ptr<std_srvs::srv::Trigger::Response> response);
     void go_signal_callback(std_msgs::msg::Bool::SharedPtr signal);
+    void command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result);
     void heartbeat_callback();
 
     /* Sent to MATLAB */
@@ -33,6 +35,8 @@ private:
 
     /* Go signal from MicroROS. Receives a bool for backwards compatiblity, but value is ignored. */
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr go_signal_subscription;
+    /* Result from MATLAB. Either success or failure. Technically supports "RUNNING", but this is ignored. */
+    rclcpp::Subscription<custom_interfaces::msg::CommandResult>::SharedPtr command_result_subscription;
 
     /* On receive (from TUI), toggle ready status */
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr toggle_ready_service;
@@ -44,12 +48,15 @@ private:
     std::unique_ptr<MissionFileParser> parser;
 
     std::mutex initiate_mission_mutex;
+    std::mutex status_mutex;
+
     volatile bool status_received;
     volatile bool command_successful;
     volatile bool ready;
     volatile bool go;
     volatile bool missions_running;
     volatile bool cancel_mission;
+    volatile bool timed_out;
 };
 
 #endif // MISSION_MANAGER_HPP
