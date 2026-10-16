@@ -2,6 +2,7 @@
 #define COMMAND_HPP
 
 #include <memory>
+#include <chrono>
 
 #include "custom_interfaces/msg/command.hpp"
 #include "custom_interfaces/msg/pose6_d.hpp"
@@ -25,6 +26,7 @@ public:
     virtual void set_next(std::shared_ptr<Command> command);
     virtual void set_failure(std::shared_ptr<Command> command);
     virtual bool mission_complete();
+    virtual bool timeout_exceeded(std::chrono::time_point<std::chrono::steady_clock> start_time);
 
 protected:
     std::shared_ptr<Command> next;

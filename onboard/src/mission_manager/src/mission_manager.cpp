@@ -42,6 +42,7 @@ void MissionManager::work_loop() {
 }
 
 void MissionManager::run_missions() {
+    RCLCPP_INFO(this->get_logger(), "Running new mission.");
     if (!parser->new_mission_available()) {
         RCLCPP_WARN(this->get_logger(), "No missions available! Either no files were parsed, or all missions have been run.");
         return;
@@ -52,12 +53,13 @@ void MissionManager::run_missions() {
     while (!(current_command->mission_complete()) && rclcpp::ok()) {
         auto current_command_msg = current_command->get_ros2_message();
         command_publisher->publish(*current_command_msg);
+        std::chrono::time_point start_time = std::chrono::steady_clock::now();
         while (!status_received && rclcpp::ok()) {
-            if (false) { // TODO: check timeout
+            if (current_command->timeout_exceeded(start_time)) {
                 status_mutex.lock();
-                current_command = current_command->get_failure();
                 command_successful = false;
                 timed_out = true;
+                RCLCPP_WARN(this->get_logger(), "Command timed out. Treating as failed.");
                 status_mutex.unlock();
                 break;
             }
