@@ -23,6 +23,7 @@ private:
     std::unique_ptr<custom_interfaces::msg::Pose6D> make_waypoint(json parameters_field);
     std::unique_ptr<custom_interfaces::msg::Pose6DMask> make_waypoint_mask(json parameters_field);
     std::unique_ptr<custom_interfaces::msg::Tolerance6D> make_tolerance(json parameters_field);
+    std::array<uint8_t,16> string_to_array(std::string string);
 
     std::vector<std::string> files_to_parse;
     std::vector<std::string> files_not_yet_parsed;

@@ -49,7 +49,8 @@ std::shared_ptr<Root> MissionFileParser::get_next_mission() {
 // TODO: handle bad parsing (maybe catch exception, report, abort)
 void MissionFileParser::parse_files(std::vector<std::string> files) {
     for (std::string file_name : files) {
-        auto file = std::ifstream(file_name);
+        // TODO: more robust path handling
+        auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
         json mission_file_data = json::parse(file);
 
         auto command_registry = std::map<std::string,std::pair<bool,std::shared_ptr<Command>>>();
@@ -75,7 +76,7 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
                     std::make_shared<Finish>(),
                     make_waypoint(parameters["goal_waypoint"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
-                    parameters["object_id"],
+                    string_to_array(parameters["object_id"]),
                     parameters["confidence_required"]
                 );
             } else if (action == "idle") {
@@ -87,7 +88,7 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
                     make_waypoint(parameters["tracking_position"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
-                    parameters["object_id"],
+                    string_to_array(parameters["object_id"]),
                     parameters["hold_time"]
                 );
             } else if (action == "duration_trick") {
@@ -96,7 +97,7 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
                     std::make_shared<Finish>(),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
-                    parameters["trick_id"],
+                    string_to_array(parameters["trick_id"]),
                     parameters["hold_time"],
                     parameters["duration"]
                 );
@@ -104,10 +105,10 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
                 command_entry = std::make_shared<DistanceTrick>(
                     std::make_shared<Finish>(),
                     std::make_shared<Finish>(),
-                    make_waypoint(parameters["destination_waypoint"]),
+                    make_waypoint(parameters["destination_position"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
-                    parameters["trick_id"],
+                    string_to_array(parameters["trick_id"]),
                     parameters["hold_time"]
                 );
             } else {
@@ -131,7 +132,7 @@ std::unique_ptr<custom_interfaces::msg::Pose6D> MissionFileParser::make_waypoint
     waypoint->roll = parameters_field["roll"];
     waypoint->pitch = parameters_field["pitch"];
     waypoint->yaw = parameters_field["yaw"];
-    return std::move(waypoint);
+    return waypoint;
 }
 
 std::unique_ptr<custom_interfaces::msg::Pose6DMask> MissionFileParser::make_waypoint_mask(json parameters_field) {
@@ -142,7 +143,7 @@ std::unique_ptr<custom_interfaces::msg::Pose6DMask> MissionFileParser::make_wayp
     waypoint_mask->roll = parameters_field["roll"];
     waypoint_mask->pitch = parameters_field["pitch"];
     waypoint_mask->yaw = parameters_field["yaw"];
-    return std::move(waypoint_mask);
+    return waypoint_mask;
 }
 
 std::unique_ptr<custom_interfaces::msg::Tolerance6D> MissionFileParser::make_tolerance(json parameters_field) {
@@ -153,6 +154,18 @@ std::unique_ptr<custom_interfaces::msg::Tolerance6D> MissionFileParser::make_tol
     tolerance->roll = parameters_field["roll"];
     tolerance->pitch = parameters_field["pitch"];
     tolerance->yaw = parameters_field["yaw"];
-    return std::move(tolerance);
+    return tolerance;
+}
+
+std::array<uint8_t,16> MissionFileParser::string_to_array(std::string string) {
+    std::array<uint8_t,16> array = {0};
+    if (string.size() > 16) {
+        fprintf(stderr, "Object ID too long! Unable to parse, returning empty.");
+        return array;
+    }
+    for (int i = 0; i < 16; i++) {
+        array[i] = string[i];
+    }
+    return array;
 }
  

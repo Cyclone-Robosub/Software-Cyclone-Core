@@ -163,8 +163,8 @@
             }
         },
         {
-            "reference": "duration_trick_example",
-            "action": "duration_trick",
+            "reference": "distance_trick_example",
+            "action": "distance_trick",
             "parameters": {
                 "destination_position": {
                     "x": 10.0,
