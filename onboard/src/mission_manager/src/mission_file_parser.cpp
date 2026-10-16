@@ -63,53 +63,50 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
 
             if (action == "drive_to_world_waypoint") {
                 command_entry = std::make_shared<DriveToWorldWaypoint>(
-                    std::make_shared<Finish>(),
-                    std::make_shared<Finish>(),
                     make_waypoint(parameters["goal_waypoint"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
-                    parameters["hold_time"]
+                    parameters["hold_time"],
+                    parameters["timeout"]
                 );
             } else if (action == "drive_to_world_waypoint_seeking") {
                 command_entry = std::make_shared<DriveToWorldWaypointSeeking>(
-                    std::make_shared<Finish>(),
-                    std::make_shared<Finish>(),
                     make_waypoint(parameters["goal_waypoint"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     string_to_array(parameters["object_id"]),
-                    parameters["confidence_required"]
+                    parameters["confidence_required"],
+                    parameters["timeout"]
                 );
             } else if (action == "idle") {
-                command_entry = std::make_shared<Idle>();
+                command_entry = std::make_shared<Idle>(
+                    parameters["duration"]
+                );
             } else if (action == "track_object_waypoint") {
                 command_entry = std::make_shared<TrackObjectWaypoint>(
-                    std::make_shared<Finish>(),
-                    std::make_shared<Finish>(),
                     make_waypoint(parameters["tracking_position"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
                     string_to_array(parameters["object_id"]),
-                    parameters["hold_time"]
+                    parameters["hold_time"],
+                    parameters["timeout"]
                 );
             } else if (action == "duration_trick") {
                 command_entry = std::make_shared<DurationTrick>(
-                    std::make_shared<Finish>(),
-                    std::make_shared<Finish>(),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
                     string_to_array(parameters["trick_id"]),
                     parameters["hold_time"],
-                    parameters["duration"]
+                    parameters["duration"],
+                    parameters["timeout"]
                 );
             } else if (action == "distance_trick") {
                 command_entry = std::make_shared<DistanceTrick>(
-                    std::make_shared<Finish>(),
-                    std::make_shared<Finish>(),
                     make_waypoint(parameters["destination_position"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
                     string_to_array(parameters["trick_id"]),
-                    parameters["hold_time"]
+                    parameters["hold_time"],
+                    parameters["timeout"]
                 );
             } else {
                 // TODO: throw an exception here or something?

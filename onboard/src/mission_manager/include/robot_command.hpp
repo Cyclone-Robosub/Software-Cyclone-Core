@@ -10,14 +10,14 @@
 
 #include "waypoint.hpp"
 
-// TODO: add timeout field to commands (not sent via ROS, but used locally)
-// TODO: add name (again, not sent to ROS)
+// TODO: add name (not sent to ROS)
 
 /* Abstract base class representing a generic Command executed in the course of a mission */
 class Command {
 public:
     Command();
-    Command(std::shared_ptr<Command> next, std::shared_ptr<Command> failure);
+    Command(double timeout);
+    Command(std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double timeout = -1);
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() = 0;
     virtual std::shared_ptr<Command> get_next();
@@ -35,7 +35,14 @@ protected:
 
 class DriveToWorldWaypoint : public Command {
 public:
-    DriveToWorldWaypoint();
+    DriveToWorldWaypoint(
+        std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
+        std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
+        std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
+        double hold_time,
+        double timeout,
+        std::array<uint8_t,16> trick_id = {'\0'}
+    );
     DriveToWorldWaypoint(
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
@@ -43,6 +50,7 @@ public:
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         double hold_time,
+        double timeout,
         std::array<uint8_t,16> trick_id = {'\0'}
     );
 
@@ -58,7 +66,14 @@ protected:
 
 class DriveToWorldWaypointSeeking : public Command {
 public:
-    DriveToWorldWaypointSeeking();
+    DriveToWorldWaypointSeeking(
+        std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
+        std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
+        std::array<uint8_t,16> object_id,
+        double confidence_required,
+        double timeout,
+        std::array<uint8_t,16> trick_id = {'\0'}
+    );
     DriveToWorldWaypointSeeking(
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
@@ -66,6 +81,7 @@ public:
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::array<uint8_t,16> object_id,
         double confidence_required,
+        double timeout,
         std::array<uint8_t,16> trick_id = {'\0'}
     );
 
@@ -81,15 +97,27 @@ protected:
 
 class Idle : public Command {
 public:
+    /* Idle indefinitely */
     Idle();
-    Idle(std::shared_ptr<Command> next, std::shared_ptr<Command> failure);
+    Idle(double duration);
+    Idle(std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double duration);
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
+protected:
+    double duration;
 };
 
 class TrackObjectWaypoint : public Command {
 public:
-    TrackObjectWaypoint();
+    TrackObjectWaypoint(
+        std::unique_ptr<custom_interfaces::msg::Pose6D> tracking_position,
+        std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
+        std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
+        std::array<uint8_t,16> object_id,
+        double hold_time,
+        double timeout,
+        std::array<uint8_t,16> trick_id = {'\0'}
+    );
     TrackObjectWaypoint(
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
@@ -98,6 +126,7 @@ public:
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         std::array<uint8_t,16> object_id,
         double hold_time,
+        double timeout,
         std::array<uint8_t,16> trick_id = {'\0'}
     );
 
@@ -114,7 +143,14 @@ protected:
 
 class DurationTrick : public Command {
 public:
-    DurationTrick();
+    DurationTrick(
+        std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
+        std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
+        std::array<uint8_t,16> trick_id,
+        double hold_time,
+        double duration,
+        double timeout
+    );
     DurationTrick(
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
@@ -122,7 +158,8 @@ public:
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         std::array<uint8_t,16> trick_id,
         double hold_time,
-        double duration
+        double duration,
+        double timeout
     );
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
@@ -137,7 +174,14 @@ protected:
 
 class DistanceTrick: public Command {
 public:
-    DistanceTrick();
+    DistanceTrick(
+        std::unique_ptr<custom_interfaces::msg::Pose6D> destination_position,
+        std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
+        std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
+        std::array<uint8_t,16> trick_id,
+        double hold_time,
+        double timeout
+    );
     DistanceTrick(
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
@@ -145,7 +189,8 @@ public:
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         std::array<uint8_t,16> trick_id,
-        double hold_time
+        double hold_time,
+        double timeout
     );
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;

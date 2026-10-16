@@ -93,14 +93,14 @@
             "reference": "idle_example",
             "action": "idle",
             "parameters": {
-                "timeout": 30
+                "duration": 30
             }
         },
         {
             "reference": "idle_example_short",
             "action": "idle",
             "parameters": {
-                "timeout": 5
+                "duration": 5
             }
         },
         {
