@@ -16,6 +16,7 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
         toggle_ready_service =  this->create_service<std_srvs::srv::Trigger>("toggle_ready", std::bind(&MissionManager::trigger_ready_signal, this, std::placeholders::_1, std::placeholders::_2));
         ready_pub_service =  this->create_service<std_srvs::srv::Trigger>("pub_ready_status", std::bind(&MissionManager::pub_ready_status_from_service, this, std::placeholders::_1, std::placeholders::_2));
         go_signal_subscription= this->create_subscription<std_msgs::msg::Bool>("go_signal", 10, std::bind(&MissionManager::go_signal_callback, this, std::placeholders::_1));
+        command_result_subscription = this->create_subscription<custom_interfaces::msg::CommandResult>("command_result", 10, std::bind(&MissionManager::command_result_callback, this, std::placeholders::_1));
         heartbeat_timer = this->create_wall_timer(500ms, std::bind(&MissionManager::heartbeat_callback, this));
         heartbeat_publisher = this->create_publisher<std_msgs::msg::Empty>("mission_manager_heartbeat", 10);
         current_ready_status_publisher = this->create_publisher<std_msgs::msg::Bool>("current_ready_state", 10);
@@ -51,8 +52,11 @@ void MissionManager::run_missions() {
         command_publisher->publish(*current_command_msg);
         while (!status_received && rclcpp::ok()) {
             if (false) { // TODO: check timeout
+                status_mutex.lock();
                 current_command = current_command->get_failure();
-                command_successful = false; // TODO: add status update mutex for this and status_received
+                command_successful = false;
+                timed_out = true;
+                status_mutex.unlock();
                 break;
             }
             if (cancel_mission) {
@@ -62,12 +66,15 @@ void MissionManager::run_missions() {
             }
             usleep(100); // Prevent hogging CPU. Probably a better solution exists. Maybe sleep this thread?
         }
+        status_mutex.lock();
         status_received = false;
         if (command_successful) {
             current_command = current_command->get_next();
         } else {
             current_command = current_command->get_failure();
         }
+        timed_out = false;
+        status_mutex.unlock();
     }
 }
 
@@ -110,6 +117,20 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
         RCLCPP_WARN(this->get_logger(), "Go signal pressed but not ready. Ignoring.");
         initiate_mission_mutex.unlock();
     }
+}
+
+void MissionManager::command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result) {
+    status_mutex.lock();
+    if (timed_out) {
+        return;
+    }
+    if (result->state == result->SUCCESS) {
+        command_successful = true;
+    } else {
+        command_successful = false;
+    }
+    status_received = true;
+    status_mutex.unlock();
 }
 
 void MissionManager::heartbeat_callback() {
