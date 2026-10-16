@@ -54,7 +54,7 @@ private:
     volatile bool command_successful;
     volatile bool ready;
     volatile bool go;
-    volatile bool missions_running;
+    volatile bool mission_running;
     volatile bool cancel_mission;
     volatile bool timed_out;
 };

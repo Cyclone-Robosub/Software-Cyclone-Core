@@ -33,7 +33,7 @@
             }
         },
         {
-            "reference": "waypoint_example_two",
+            "reference": "waypoint_example_2",
             "action": "drive_to_world_waypoint",
             "parameters": {
                 "goal_waypoint": {
