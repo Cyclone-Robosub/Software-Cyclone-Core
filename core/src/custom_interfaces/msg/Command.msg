@@ -6,9 +6,6 @@ uint8 TRACK_OBJECT_WAYPOINT=3
 uint8 DURATION_TRICK=4
 uint8 DISTANCE_TRICK=5
 
-# constants for object_id type: to be extended by vision team
-uint8 OBJECT_A=0
-uint8 OBJECT_B=1
 # etc.
 
 # the command type, one of IDLE, DRIVE_TO_WORLD_WAYPOINT, etc.
@@ -24,7 +21,7 @@ Tolerance6D tolerance
 float64 hold_time
 
 # Used for DRIVE_TO_WORLD_WAYPOINT_SEEKING and TRACK_OBJECT_WAYPOINT
-uint8 object_id
+char[16] object_id
 float64 confidence_required
 
 # Used for ALL commands except IDLE, primarily for DURATION_TRICK and DISTANCE_TRICK
