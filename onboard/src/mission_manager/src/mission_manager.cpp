@@ -15,7 +15,7 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
     cancel_mission(false),
     timed_out(false) {
         command_publisher = this->create_publisher<custom_interfaces::msg::Command>("current_command", 10);
-        toggle_ready_service =  this->create_service<std_srvs::srv::Trigger>("toggle_ready", std::bind(&MissionManager::trigger_ready_signal, this, std::placeholders::_1, std::placeholders::_2));
+        toggle_ready_service =  this->create_service<std_srvs::srv::Trigger>("ready_signal_service", std::bind(&MissionManager::trigger_ready_signal, this, std::placeholders::_1, std::placeholders::_2));
         ready_pub_service =  this->create_service<std_srvs::srv::Trigger>("pub_ready_status", std::bind(&MissionManager::pub_ready_status_from_service, this, std::placeholders::_1, std::placeholders::_2));
         go_signal_subscription= this->create_subscription<std_msgs::msg::Bool>("go_signal", 10, std::bind(&MissionManager::go_signal_callback, this, std::placeholders::_1));
         command_result_subscription = this->create_subscription<custom_interfaces::msg::CommandResult>("command_result", 10, std::bind(&MissionManager::command_result_callback, this, std::placeholders::_1));
@@ -136,7 +136,8 @@ void MissionManager::command_result_callback(custom_interfaces::msg::CommandResu
 }
 
 void MissionManager::heartbeat_callback() {
-    // TODO
+    auto msg = std_msgs::msg::Empty();
+    heartbeat_publisher->publish(msg);
 }
 
 #ifndef ENABLE_TESTING
