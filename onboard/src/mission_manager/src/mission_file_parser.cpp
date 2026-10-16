@@ -127,18 +127,18 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
     }
 }
 
-
 std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> MissionFileParser::parse_tree(json tree, std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> registry) {
     auto updated_registry = registry;
     json ref = tree["ref"];
     json next = tree["next"];
     json failure = tree["failure"];
+
     if (next != nullptr) {
         updated_registry = parse_tree(next, updated_registry);
         // Prevent double-defined tree nodes
-        if (!updated_registry["ref"].first) {
-            updated_registry["next"].first = true;
-            updated_registry["ref"].second = updated_registry["next"].second;
+        if (!updated_registry[ref].first) {
+            updated_registry[next["ref"]].first = true;
+            updated_registry[ref].second->set_next(updated_registry[next["ref"]].second);
         } else {
             // TODO: better error handling
             fprintf(stderr, "Uh oh, bad tree! You defined a node twice. Don't do that!\n");
@@ -147,9 +147,9 @@ std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> MissionFileParser
     if (failure != nullptr) {
         updated_registry = parse_tree(failure, updated_registry);
         // Prevent double-defined tree nodes
-        if (!updated_registry["ref"].first) {
-            updated_registry["failure"].first = true;
-            updated_registry["ref"].second = updated_registry["failure"].second;
+        if (!updated_registry[ref].first) {
+            updated_registry[failure["ref"]].first = true;
+            updated_registry[ref].second->set_failure(updated_registry[failure["ref"]].second);
         } else {
             fprintf(stderr, "Uh oh, bad tree! You defined a node twice. Don't do that!\n");
         }

@@ -10,8 +10,10 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
     status_received(false),
     command_successful(false),
     ready(false),
-    missions_running(false),
-    cancel_mission(false) {
+    go(false),
+    mission_running(false),
+    cancel_mission(false),
+    timed_out(false) {
         command_publisher = this->create_publisher<custom_interfaces::msg::Command>("current_command", 10);
         toggle_ready_service =  this->create_service<std_srvs::srv::Trigger>("toggle_ready", std::bind(&MissionManager::trigger_ready_signal, this, std::placeholders::_1, std::placeholders::_2));
         ready_pub_service =  this->create_service<std_srvs::srv::Trigger>("pub_ready_status", std::bind(&MissionManager::pub_ready_status_from_service, this, std::placeholders::_1, std::placeholders::_2));
@@ -28,11 +30,11 @@ void MissionManager::work_loop() {
     while (rclcpp::ok()) {
         if (go) {
             go = false;
-            missions_running = true;
+            mission_running = true;
             initiate_mission_mutex.unlock();
             run_missions(); // NOTE: blocks thread
             initiate_mission_mutex.lock();
-            missions_running = false;
+            mission_running = false;
             initiate_mission_mutex.unlock();
         }
         usleep(100); // Prevent hogging CPU. Probably a better solution exists. Maybe sleep this thread?
@@ -41,7 +43,7 @@ void MissionManager::work_loop() {
 
 void MissionManager::run_missions() {
     if (!parser->new_mission_available()) {
-        RCLCPP_WARN(this->get_logger(), "No missions available! No missions will be run. Were any files parsed?");
+        RCLCPP_WARN(this->get_logger(), "No missions available! Either no files were parsed, or all missions have been run.");
         return;
     }
 
@@ -103,9 +105,9 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
     */
     (void)signal; // stop compiler complaining
     initiate_mission_mutex.lock();
-    if (missions_running) {
+    if (mission_running) {
         cancel_mission = true;
-        missions_running = false; // TODO: make sure that command_successful and status_received don't get set to true between cancel and next mission
+        mission_running = false; // TODO: make sure that command_successful and status_received don't get set to true between cancel and next mission
         RCLCPP_INFO(this->get_logger(), "Mission was running, now cancelled.");
         initiate_mission_mutex.unlock();
         return;
