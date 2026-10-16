@@ -126,7 +126,7 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
 
 void MissionManager::command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result) {
     status_mutex.lock();
-    if (timed_out) {
+    if (timed_out || result->state == result->RUNNING) {
         return;
     }
     if (result->state == result->SUCCESS) {
