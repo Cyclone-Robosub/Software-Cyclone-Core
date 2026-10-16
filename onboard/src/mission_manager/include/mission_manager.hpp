@@ -49,6 +49,7 @@ private:
     volatile bool ready;
     volatile bool go;
     volatile bool missions_running;
+    volatile bool cancel_mission;
 };
 
 #endif // MISSION_MANAGER_HPP

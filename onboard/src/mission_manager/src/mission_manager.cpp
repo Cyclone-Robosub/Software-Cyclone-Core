@@ -10,7 +10,8 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
     status_received(false),
     command_successful(false),
     ready(false),
-    missions_running(false) {
+    missions_running(false),
+    cancel_mission(false) {
         command_publisher = this->create_publisher<custom_interfaces::msg::Command>("current_command", 10);
         toggle_ready_service =  this->create_service<std_srvs::srv::Trigger>("toggle_ready", std::bind(&MissionManager::trigger_ready_signal, this, std::placeholders::_1, std::placeholders::_2));
         ready_pub_service =  this->create_service<std_srvs::srv::Trigger>("pub_ready_status", std::bind(&MissionManager::pub_ready_status_from_service, this, std::placeholders::_1, std::placeholders::_2));
@@ -43,22 +44,29 @@ void MissionManager::run_missions() {
         return;
     }
 
-    while (parser->new_mission_available()) {
-        std::shared_ptr<Root> mission_root = parser->get_next_mission();
-        std::shared_ptr<Command> current_command = mission_root->get_next();
-        while (!(current_command->mission_complete())) {
-            auto current_command_msg = current_command->get_ros2_message();
-            command_publisher->publish(*current_command_msg);
-            while (!status_received) {
-                // TODO: check timeout
-                usleep(100); // Prevent hogging CPU. Probably a better solution exists. Maybe sleep this thread?
-            }
-            status_received = false;
-            if (command_successful) {
-                current_command = current_command->get_next();
-            } else {
+    // First mission is root: call get_next() on that to get first real command
+    std::shared_ptr<Command> current_command = parser->get_next_mission()->get_next();
+    while (!(current_command->mission_complete())) {
+        auto current_command_msg = current_command->get_ros2_message();
+        command_publisher->publish(*current_command_msg);
+        while (!status_received) {
+            if (false) { // TODO: check timeout
                 current_command = current_command->get_failure();
+                command_successful = false; // TODO: add status update mutex for this and status_received
+                break;
             }
+            if (cancel_mission) {
+                auto idle_command_msg = std::make_shared<Idle>()->get_ros2_message();
+                command_publisher->publish(*idle_command_msg);
+                return;
+            }
+            usleep(100); // Prevent hogging CPU. Probably a better solution exists. Maybe sleep this thread?
+        }
+        status_received = false;
+        if (command_successful) {
+            current_command = current_command->get_next();
+        } else {
+            current_command = current_command->get_failure();
         }
     }
 }
@@ -89,13 +97,15 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
     (void)signal; // stop compiler complaining
     initiate_mission_mutex.lock();
     if (missions_running) {
-        RCLCPP_WARN(this->get_logger(), "Missions already running. Pause/resume functionality not implemented.");
+        cancel_mission = true;
+        missions_running = false; // TODO: make sure that command_successful and status_received don't get set to true between cancel and next mission
+        RCLCPP_INFO(this->get_logger(), "Mission was running, now cancelled.");
         initiate_mission_mutex.unlock();
         return;
     }
     if (ready) {
         go = true;
-        // mutex unlocked in work loop
+        // mutex is unlocked in work loop
     } else {
         RCLCPP_WARN(this->get_logger(), "Go signal pressed but not ready. Ignoring.");
         initiate_mission_mutex.unlock();
@@ -112,7 +122,8 @@ void MissionManager::heartbeat_callback() {
 int main(int argc, char * argv[]) {
     rclcpp::init(argc, argv);
     auto parser = std::make_unique<MissionFileParser>();
-    parser->parse_files();
+    parser->add_file_to_parse("sample_mission_file.json");
+    parser->parse_all_files();
 
     auto mission_manager = std::make_shared<MissionManager>(std::move(parser));
     

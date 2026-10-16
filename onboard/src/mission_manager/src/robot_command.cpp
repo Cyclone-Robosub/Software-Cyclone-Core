@@ -70,7 +70,7 @@ DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
         std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
-        uint8_t object_id,
+        std::array<uint8_t,16> object_id,
         double confidence_required,
         std::array<uint8_t,16> trick_id
     ) :
@@ -120,7 +120,7 @@ TrackObjectWaypoint::TrackObjectWaypoint(
         std::unique_ptr<custom_interfaces::msg::Pose6D> tracking_position,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
-        uint8_t object_id,
+        std::array<uint8_t,16> object_id,
         double hold_time,
         std::array<uint8_t,16> trick_id
     ) :
