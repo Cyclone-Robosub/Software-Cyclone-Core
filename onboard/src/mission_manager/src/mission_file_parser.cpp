@@ -27,6 +27,25 @@ void MissionFileParser::add_file_to_parse(std::string file_name) {
     files_to_parse.push_back(file_name);
 }
 
+// Declan Parser Functions
+void MissionFileParser::parse_mission_list_file(std::string file_name) {
+    // TODO: more robust path handling
+    auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
+    if (!file.good()) {
+        fprintf(stderr, "Mission list '%s' not recognized!\n", file_name.c_str());
+        return;
+    }
+    std::string mission_file;
+    while (getline(file, mission_file)) {
+        if (mission_file.size() > 0 && mission_file[0] == '#') { continue; }
+        add_file_to_parse(mission_file);
+    }
+}
+
+void MissionFileParser::parse_always_run_file() {
+    parse_mission_list_file("always_run.txt");
+}
+
 void MissionFileParser::parse_new_files() {
     parse_files(files_not_yet_parsed);
     files_not_yet_parsed.clear();
@@ -99,6 +118,10 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
     for (std::string file_name : files) {
         // TODO: more robust path handling
         auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
+        if (!file.good()) {
+            fprintf(stderr, "Mission file '%s' not recognized!\n", file_name.c_str());
+            continue;
+        }
         json mission_file_data = json::parse(file);
 
         auto command_registry = std::map<std::string,std::pair<bool,std::shared_ptr<Command>>>();
