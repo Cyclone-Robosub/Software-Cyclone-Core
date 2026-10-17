@@ -26,7 +26,8 @@ private:
     void go_signal_callback(std_msgs::msg::Bool::SharedPtr signal);
     void command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result);
     void heartbeat_callback();
-    void publish_mission_status(std::shared_ptr<Command> current_command, std::string mission_name);
+    void publish_mission_status_throttled(std::shared_ptr<Command> current_command, std::string mission_name);
+    void publish_mission_status_unthrottled(std::shared_ptr<Command> current_command, std::string mission_name);
     std::array<uint8_t,32> string_to_array(std::string string);
 
     /* Sent to MATLAB */
