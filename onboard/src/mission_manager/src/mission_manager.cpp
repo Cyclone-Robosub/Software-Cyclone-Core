@@ -62,7 +62,7 @@ void MissionManager::run_missions() {
          * - The command meets seperate custom success criteria 
         */
         while (!status_received && rclcpp::ok()) {
-            publish_mission_status(current_command, parser->get_current_mission_name());
+            publish_mission_status_throttled(current_command, parser->get_current_mission_name());
             if (current_command->timeout_exceeded()) {
                 status_mutex.lock();
                 command_successful = false;
@@ -95,6 +95,9 @@ void MissionManager::run_missions() {
         timed_out = false;
         status_mutex.unlock();
     }
+    /* Finish command can be treated as an idle, so this publishes an idle after completing a mission */
+    command_publisher->publish(*current_command->start_command_and_get_message());
+    publish_mission_status_unthrottled(current_command, parser->get_current_mission_name());
     RCLCPP_INFO(this->get_logger(), "Mission complete!");
 }
 
@@ -160,12 +163,16 @@ void MissionManager::heartbeat_callback() {
     heartbeat_publisher->publish(msg);
 }
 
-void MissionManager::publish_mission_status(std::shared_ptr<Command> current_command, std::string mission_name) {
-    auto now = std::chrono::steady_clock::now();
-    if (now - last_mission_status_update < 33ms) { // 30 hz
+void MissionManager::publish_mission_status_throttled(std::shared_ptr<Command> current_command, std::string mission_name) {
+    if (std::chrono::steady_clock::now() - last_mission_status_update < 33ms) { // 30 hz
         return;
     }
-    last_mission_status_update = now;
+    publish_mission_status_unthrottled(current_command, mission_name);
+}
+
+void MissionManager::publish_mission_status_unthrottled(std::shared_ptr<Command> current_command, std::string mission_name) {
+    last_mission_status_update = std::chrono::steady_clock::now();
+
     auto msg = custom_interfaces::msg::MissionStatus();
     msg.current_mission_name = string_to_array(mission_name);
     msg.current_command_name = string_to_array(current_command->get_name());
