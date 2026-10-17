@@ -25,7 +25,7 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
         current_ready_status_publisher = this->create_publisher<std_msgs::msg::Bool>("current_ready_state", 10);
         current_mission_status_publisher = this->create_publisher<custom_interfaces::msg::MissionStatus>("mission_status", 10);
         // TODO (Declan): service to dynamically add mission file (give file name, adds to parser) "add_mission_file"
-        // TODO (Declan): service to dynamically add folder with mission files (low priority)
+        // TODO (Declan): "add_meta_file" / "add_config_file" to add 
         pub_ready_status();
 }
 
@@ -143,7 +143,7 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
     }
 }
 
-// Declan Functions
+// Declan Functions Here
 
 void MissionManager::command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result) {
     status_mutex.lock();
@@ -200,9 +200,9 @@ std::array<uint8_t,32> MissionManager::string_to_array(std::string string) {
 int main(int argc, char * argv[]) {
     rclcpp::init(argc, argv);
     auto parser = std::make_unique<MissionFileParser>();
-    // Change to automatically parse all files in mission_files/always_run
-    // Make new parser functions "parse_folder" and "parse_always_parse_missions"
-    parser->add_file_to_parse("sample_mission_file.json");
+    // Change to automatically parse all files in always_run.txt
+    // Make new parser functions "parse_mission_list_file" and "parse_always_run_file"
+    parser->parse_always_run_file();
     parser->parse_all_files();
 
     auto mission_manager = std::make_shared<MissionManager>(std::move(parser));

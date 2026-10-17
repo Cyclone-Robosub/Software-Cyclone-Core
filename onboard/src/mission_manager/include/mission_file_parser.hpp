@@ -22,6 +22,8 @@ public:
     MissionFileParser();
 
     void add_file_to_parse(std::string file_name);
+    void parse_mission_list_file(std::string file_name);
+    void parse_always_run_file();
     void parse_new_files();
     void parse_all_files();
     void reset_to_first_mission();
