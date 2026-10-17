@@ -17,13 +17,14 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
         command_publisher = this->create_publisher<custom_interfaces::msg::Command>("current_command", 10);
         toggle_ready_service =  this->create_service<std_srvs::srv::Trigger>("ready_signal_service", std::bind(&MissionManager::trigger_ready_signal, this, std::placeholders::_1, std::placeholders::_2));
         ready_pub_service =  this->create_service<std_srvs::srv::Trigger>("pub_ready_status", std::bind(&MissionManager::pub_ready_status_from_service, this, std::placeholders::_1, std::placeholders::_2));
-        go_signal_subscription= this->create_subscription<std_msgs::msg::Bool>("go_signal", 10, std::bind(&MissionManager::go_signal_callback, this, std::placeholders::_1));
+        go_signal_subscription = this->create_subscription<std_msgs::msg::Bool>("go_signal", 10, std::bind(&MissionManager::go_signal_callback, this, std::placeholders::_1));
         command_result_subscription = this->create_subscription<custom_interfaces::msg::CommandResult>("command_result", 10, std::bind(&MissionManager::command_result_callback, this, std::placeholders::_1));
         heartbeat_timer = this->create_wall_timer(500ms, std::bind(&MissionManager::heartbeat_callback, this));
         heartbeat_publisher = this->create_publisher<std_msgs::msg::Empty>("mission_manager_heartbeat", 10);
         current_ready_status_publisher = this->create_publisher<std_msgs::msg::Bool>("current_ready_state", 10);
         // current_mission_status_publisher = this->create_publisher<std_msgs::msg::Bool>("mission_status", 10); // TODO: show current mission, command, and duration on dashboard
-        // TODO: service to dynamically parse mission file
+        // TODO (Declan): service to dynamically add mission file (give file name, adds to parser) "add_mission_file"
+        // TODO (Declan): service to dynamically add folder with mission files (low priority)
 }
 
 void MissionManager::work_loop() {
@@ -126,6 +127,8 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
     }
 }
 
+// Declan Functions
+
 void MissionManager::command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result) {
     status_mutex.lock();
     if (timed_out || result->state == result->RUNNING) {
@@ -151,6 +154,8 @@ void MissionManager::heartbeat_callback() {
 int main(int argc, char * argv[]) {
     rclcpp::init(argc, argv);
     auto parser = std::make_unique<MissionFileParser>();
+    // Change to automatically parse all files in mission_files/always_run
+    // Make new parser functions "parse_folder" and "parse_always_parse_missions"
     parser->add_file_to_parse("sample_mission_file.json");
     parser->parse_all_files();
 
