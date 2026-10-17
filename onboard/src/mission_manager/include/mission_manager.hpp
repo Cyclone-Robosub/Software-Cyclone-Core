@@ -18,7 +18,7 @@ public:
 
 private:
     /* Runs in a seperate thread so that mission triggering can happen independently */
-    void run_missions();
+    void run_mission();
     void pub_ready_status();
 
     void trigger_ready_signal(const std::shared_ptr<std_srvs::srv::Trigger::Request> request, std::shared_ptr<std_srvs::srv::Trigger::Response> response);
