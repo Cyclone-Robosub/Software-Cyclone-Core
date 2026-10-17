@@ -34,7 +34,7 @@ void MissionManager::work_loop() {
             go = false;
             mission_running = true;
             initiate_mission_mutex.unlock();
-            run_missions(); // NOTE: blocks thread
+            run_mission(); // NOTE: blocks thread
             initiate_mission_mutex.lock();
             mission_running = false;
             initiate_mission_mutex.unlock();
@@ -43,7 +43,7 @@ void MissionManager::work_loop() {
     }
 }
 
-void MissionManager::run_missions() {
+void MissionManager::run_mission() {
     RCLCPP_INFO(this->get_logger(), "Running new mission.");
     if (!parser->new_mission_available()) {
         RCLCPP_WARN(this->get_logger(), "No missions available! Either no files were parsed, or all missions have been run.");
@@ -146,7 +146,8 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
 
 void MissionManager::command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result) {
     status_mutex.lock();
-    if (timed_out) {
+    if (timed_out || !mission_running) {
+        status_mutex.unlock();
         return;
     }
     if (result->state == result->SUCCESS) {
