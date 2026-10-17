@@ -68,7 +68,7 @@ void Command::custom_finish_action() {
 
 bool Command::custom_success_criteria_met() {
     /* nothing special for base Command, but some might have extra. */
-    return true;
+    return false;
 }
 
 DriveToWorldWaypoint::DriveToWorldWaypoint(
@@ -166,16 +166,12 @@ std::unique_ptr<custom_interfaces::msg::Command> DriveToWorldWaypointSeeking::ge
     return command_msg;
 }
 
-Idle::Idle() : Command(), duration(-1) {
-    // intentionally blank
-}
-
 Idle::Idle(std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double duration) :
-    Command(next, failure, duration + 1), duration(duration) {
+    Command(next, failure), duration(duration) {
         // intentionally blank
 }
 
-Idle::Idle(double duration) : Command(duration + 1), duration(duration) {
+Idle::Idle(double duration) : Command(), duration(duration) {
     // intentionally blank
 }
 
@@ -186,10 +182,6 @@ std::unique_ptr<custom_interfaces::msg::Command> Idle::get_ros2_message() {
 }
 
 bool Idle::custom_success_criteria_met() {
-    /* Runs indefinitely, so can be ended at any time. */
-    if (duration < 0) {
-        return true;
-    }
     std::chrono::time_point now = std::chrono::steady_clock::now();
     return now > (start_time + (duration * 1000 * 1ms));
 }
