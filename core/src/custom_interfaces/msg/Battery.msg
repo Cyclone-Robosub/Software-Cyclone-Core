@@ -1,4 +1,4 @@
-# In 
+#Battery current and voltage
+
 float32 voltage
-# In 
 float32 current

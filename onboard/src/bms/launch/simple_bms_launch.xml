@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node pkg="simple_bms" exec="simple_bms" name="simple_bms" output="screen"></node>
+</launch>
