@@ -4,9 +4,22 @@
 #include <iostream>
 #include <map>
 
+Mission::Mission(std::shared_ptr<Root> root, std::string name) :
+    root(root),
+    name(name) {
+    // intentionally blank
+}
+
+std::shared_ptr<Root> Mission::get_mission() {
+    return root;
+}
+
+std::string Mission::get_name() {
+    return name;
+}
 
 MissionFileParser::MissionFileParser() {
-    // TODO
+    // intentionally blank
 }
 
 void MissionFileParser::add_file_to_parse(std::string file_name) {
@@ -37,6 +50,10 @@ uint8_t MissionFileParser::get_current_mission_index() {
     return (next_mission_index == 0) ? 0 : (next_mission_index - 1);
 }
 
+std::string MissionFileParser::get_current_mission_name() {
+    return parsed_missions[get_current_mission_index()].get_name();
+}
+
 bool MissionFileParser::jump_to_mission(uint8_t mission_index) {
     if (mission_index >= parsed_missions.size()) {
         return false;
@@ -46,7 +63,7 @@ bool MissionFileParser::jump_to_mission(uint8_t mission_index) {
 }
 
 std::shared_ptr<Root> MissionFileParser::get_next_mission() {
-    return parsed_missions[next_mission_index++];
+    return parsed_missions[next_mission_index++].get_mission();
 }
 
 void MissionFileParser::print_mission_tree_at_index(uint8_t mission_index) {
@@ -54,7 +71,7 @@ void MissionFileParser::print_mission_tree_at_index(uint8_t mission_index) {
         // TODO better error handling
         return;
     }
-    print_mission_tree(parsed_missions[mission_index], 0);
+    print_mission_tree(parsed_missions[mission_index].get_mission(), 0);
 }
 
 void MissionFileParser::print_mission_tree(std::shared_ptr<Command> tree, uint8_t num_spaces) {
@@ -157,7 +174,7 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
         command_registry = parse_tree(tree, command_registry);
         auto root = std::make_shared<Root>();
         root->set_next(command_registry[tree["ref"]].second);
-        parsed_missions.push_back(root);
+        parsed_missions.push_back(Mission(root,file_name));
     }
 }
 

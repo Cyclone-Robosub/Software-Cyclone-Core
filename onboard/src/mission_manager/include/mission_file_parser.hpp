@@ -7,6 +7,16 @@
 
 using json = nlohmann::json;
 
+class Mission {
+public:
+    Mission(std::shared_ptr<Root> root, std::string name);
+    std::shared_ptr<Root> get_mission();
+    std::string get_name();
+private:
+    std::shared_ptr<Root> root;
+    std::string name;
+};
+
 class MissionFileParser {
 public:
     MissionFileParser();
@@ -17,6 +27,7 @@ public:
     void reset_to_first_mission();
     bool new_mission_available();
     uint8_t get_current_mission_index();
+    std::string get_current_mission_name();
     bool jump_to_mission(uint8_t mission_index);
     std::shared_ptr<Root> get_next_mission();
     void print_mission_tree_at_index(uint8_t mission_index);
@@ -31,7 +42,7 @@ private:
 
     std::vector<std::string> files_to_parse;
     std::vector<std::string> files_not_yet_parsed;
-    std::vector<std::shared_ptr<Root>> parsed_missions;
+    std::vector<Mission> parsed_missions;
     uint8_t next_mission_index;
 };
 

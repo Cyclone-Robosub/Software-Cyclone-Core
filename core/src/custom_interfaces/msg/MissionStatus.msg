@@ -1,0 +1,4 @@
+string current_mission_name
+string current_command_name
+float64 seconds_total
+float64 seconds_remaining

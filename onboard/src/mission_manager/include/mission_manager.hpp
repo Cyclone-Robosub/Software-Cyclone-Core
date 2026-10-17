@@ -6,6 +6,7 @@
 #include "std_msgs/msg/empty.hpp"
 #include "std_srvs/srv/trigger.hpp"
 #include "custom_interfaces/msg/command_result.hpp"
+#include "custom_interfaces/msg/mission_status.hpp"
 #include "robot_command.hpp"
 #include "mission_file_parser.hpp"
 #include <mutex>
@@ -25,6 +26,7 @@ private:
     void go_signal_callback(std_msgs::msg::Bool::SharedPtr signal);
     void command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result);
     void heartbeat_callback();
+    void publish_mission_status(std::shared_ptr<Command> current_command, std::string mission_name);
 
     /* Sent to MATLAB */
     rclcpp::Publisher<custom_interfaces::msg::Command>::SharedPtr command_publisher;
@@ -32,6 +34,8 @@ private:
     rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr heartbeat_publisher;
     /* Whether MissionManager is ready or not. Publishes on change, or when requested. */
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr current_ready_status_publisher;
+    /* Information about the state of the current mission and command, to be used for display in dashboard */
+    rclcpp::Publisher<custom_interfaces::msg::MissionStatus>::SharedPtr current_mission_status_publisher;
 
     /* Go signal from MicroROS. Receives a bool for backwards compatiblity, but value is ignored. */
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr go_signal_subscription;
@@ -57,6 +61,7 @@ private:
     volatile bool mission_running;
     volatile bool cancel_mission;
     volatile bool timed_out;
+    std::chrono::time_point<std::chrono::steady_clock> last_mission_status_update;
 };
 
 #endif // MISSION_MANAGER_HPP
