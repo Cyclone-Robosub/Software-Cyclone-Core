@@ -77,7 +77,7 @@ void MissionManager::run_missions() {
                 break;
             }
             if (cancel_mission) {
-                auto idle_command_msg = std::make_shared<Idle>(0)->get_ros2_message();
+                auto idle_command_msg = std::make_shared<Idle>("cancel", -1)->get_ros2_message();
                 command_publisher->publish(*idle_command_msg);
                 return;
             }
