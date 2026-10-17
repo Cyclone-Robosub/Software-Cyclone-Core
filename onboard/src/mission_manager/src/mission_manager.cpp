@@ -56,12 +56,23 @@ void MissionManager::run_missions() {
         auto current_command_msg = current_command->start_command_and_get_message();
         command_publisher->publish(*current_command_msg);
         current_command->custom_start_action();
-        while ((!status_received || !current_command->custom_success_criteria_met()) && rclcpp::ok()) {
+        /* We loop until either:
+         * - We receive a status update from MATLAB OR
+         * - MATLAB takes too long to respond, so we time out ourselves OR
+         * - The command meets seperate custom success criteria 
+        */
+        while (!status_received && rclcpp::ok()) {
             if (current_command->timeout_exceeded()) {
                 status_mutex.lock();
                 command_successful = false;
                 timed_out = true;
                 RCLCPP_WARN(this->get_logger(), "Command timed out. Treating as failed.");
+                status_mutex.unlock();
+                break;
+            }
+            if (current_command->custom_success_criteria_met()) {
+                status_mutex.lock();
+                command_successful = true;
                 status_mutex.unlock();
                 break;
             }
@@ -131,7 +142,7 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
 
 void MissionManager::command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result) {
     status_mutex.lock();
-    if (timed_out || result->state == result->RUNNING) {
+    if (timed_out) {
         return;
     }
     if (result->state == result->SUCCESS) {

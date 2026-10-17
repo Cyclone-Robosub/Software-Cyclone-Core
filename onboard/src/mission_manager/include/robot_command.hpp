@@ -104,7 +104,6 @@ protected:
 class Idle : public Command {
 public:
     /* Idle indefinitely */
-    Idle();
     Idle(double duration);
     Idle(std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double duration);
 
