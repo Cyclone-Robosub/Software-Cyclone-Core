@@ -2,21 +2,24 @@
 
 using namespace std::chrono_literals;
 
-Command::Command() :
+Command::Command(std::string name) :
+    name(name),
     next(std::make_shared<Finish>()),
     failure(std::make_shared<Finish>()),
     timeout(-1) {
     // intentionally blank
 }
 
-Command::Command(double timeout) :
+Command::Command(std::string name, double timeout) :
+    name(name),
     next(std::make_shared<Finish>()),
     failure(std::make_shared<Finish>()),
     timeout(timeout) {
     // intentionally blank
 }
 
-Command::Command(std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double timeout) :
+Command::Command(std::string name, std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double timeout) :
+    name(name),
     next(std::move(next)),
     failure(std::move(failure)),
     timeout(timeout) {
@@ -35,6 +38,10 @@ std::shared_ptr<Command> Command::get_next() {
 
 std::shared_ptr<Command> Command::get_failure() {
     return failure;
+}
+
+std::string Command::get_name() {
+    return name;
 }
 
 void Command::set_next(std::shared_ptr<Command> command) {
@@ -72,6 +79,7 @@ bool Command::custom_success_criteria_met() {
 }
 
 DriveToWorldWaypoint::DriveToWorldWaypoint(
+        std::string name,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
@@ -79,7 +87,7 @@ DriveToWorldWaypoint::DriveToWorldWaypoint(
         double timeout,
         std::array<uint8_t,16> trick_id
     ) :
-    Command(timeout),
+    Command(name, timeout),
     goal_waypoint(std::move(goal_waypoint)),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
@@ -89,6 +97,7 @@ DriveToWorldWaypoint::DriveToWorldWaypoint(
 };
 
 DriveToWorldWaypoint::DriveToWorldWaypoint(
+        std::string name,
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
@@ -98,7 +107,7 @@ DriveToWorldWaypoint::DriveToWorldWaypoint(
         double timeout,
         std::array<uint8_t,16> trick_id
     ) :
-    Command(next, failure, timeout),
+    Command(name, next, failure, timeout),
     goal_waypoint(std::move(goal_waypoint)),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
@@ -119,6 +128,7 @@ std::unique_ptr<custom_interfaces::msg::Command> DriveToWorldWaypoint::get_ros2_
 }
 
 DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
+        std::string name,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::array<uint8_t,16> object_id,
@@ -126,7 +136,7 @@ DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
         double timeout,
         std::array<uint8_t,16> trick_id
     ) :
-    Command(timeout),
+    Command(name, timeout),
     goal_waypoint(std::move(goal_waypoint)),
     waypoint_mask(std::move(waypoint_mask)),
     object_id(object_id),
@@ -136,6 +146,7 @@ DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
 }
 
 DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
+        std::string name,
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
@@ -145,7 +156,7 @@ DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
         double timeout,
         std::array<uint8_t,16> trick_id
     ) :
-    Command(next, failure, timeout),
+    Command(name, next, failure, timeout),
     goal_waypoint(std::move(goal_waypoint)),
     waypoint_mask(std::move(waypoint_mask)),
     object_id(object_id),
@@ -166,12 +177,12 @@ std::unique_ptr<custom_interfaces::msg::Command> DriveToWorldWaypointSeeking::ge
     return command_msg;
 }
 
-Idle::Idle(std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double duration) :
-    Command(next, failure), duration(duration) {
+Idle::Idle(std::string name, std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double duration) :
+    Command(name, next, failure), duration(duration) {
         // intentionally blank
 }
 
-Idle::Idle(double duration) : Command(), duration(duration) {
+Idle::Idle(std::string name, double duration) : Command(name), duration(duration) {
     // intentionally blank
 }
 
@@ -187,6 +198,7 @@ bool Idle::custom_success_criteria_met() {
 }
 
 TrackObjectWaypoint::TrackObjectWaypoint(
+        std::string name,
         std::unique_ptr<custom_interfaces::msg::Pose6D> tracking_position,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
@@ -195,7 +207,7 @@ TrackObjectWaypoint::TrackObjectWaypoint(
         double timeout,
         std::array<uint8_t,16> trick_id
     ) :
-    Command(timeout),
+    Command(name, timeout),
     tracking_position(std::move(tracking_position)),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
@@ -206,6 +218,7 @@ TrackObjectWaypoint::TrackObjectWaypoint(
 }
 
 TrackObjectWaypoint::TrackObjectWaypoint(
+        std::string name,
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> tracking_position,
@@ -216,7 +229,7 @@ TrackObjectWaypoint::TrackObjectWaypoint(
         double timeout,
         std::array<uint8_t,16> trick_id
     ) :
-    Command(next, failure, timeout),
+    Command(name, next, failure, timeout),
     tracking_position(std::move(tracking_position)),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
@@ -239,6 +252,7 @@ std::unique_ptr<custom_interfaces::msg::Command> TrackObjectWaypoint::get_ros2_m
 }
 
 DurationTrick::DurationTrick(
+        std::string name,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         std::array<uint8_t,16> trick_id,
@@ -246,7 +260,7 @@ DurationTrick::DurationTrick(
         double duration,
         double timeout
     ) :
-    Command(timeout),
+    Command(name, timeout),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
     trick_id(trick_id),
@@ -256,6 +270,7 @@ DurationTrick::DurationTrick(
 }
 
 DurationTrick::DurationTrick(
+        std::string name,
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
@@ -265,7 +280,7 @@ DurationTrick::DurationTrick(
         double duration,
         double timeout
     ) :
-    Command(next, failure, timeout),
+    Command(name, next, failure, timeout),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
     trick_id(trick_id),
@@ -286,6 +301,7 @@ std::unique_ptr<custom_interfaces::msg::Command> DurationTrick::get_ros2_message
 }
 
 DistanceTrick::DistanceTrick(
+        std::string name,
         std::unique_ptr<custom_interfaces::msg::Pose6D> destination_position,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
@@ -293,7 +309,7 @@ DistanceTrick::DistanceTrick(
         double hold_time,
         double timeout
     ) :
-    Command(timeout),
+    Command(name, timeout),
     destination_position(std::move(destination_position)),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
@@ -303,6 +319,7 @@ DistanceTrick::DistanceTrick(
 }
 
 DistanceTrick::DistanceTrick(
+        std::string name,
         std::shared_ptr<Command> next,
         std::shared_ptr<Command> failure,
         std::unique_ptr<custom_interfaces::msg::Pose6D> destination_position,
@@ -312,7 +329,7 @@ DistanceTrick::DistanceTrick(
         double hold_time,
         double timeout
     ) :
-    Command(next, failure, timeout),
+    Command(name, next, failure, timeout),
     destination_position(std::move(destination_position)),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
@@ -332,11 +349,11 @@ std::unique_ptr<custom_interfaces::msg::Command> DistanceTrick::get_ros2_message
     return command_msg;
 }
 
-Root::Root() : Command() {
+Root::Root() : Command("root") {
     // intentionally blank
 }
 
-Root::Root(std::shared_ptr<Command> next) : Command(next, std::make_shared<Root>()) {
+Root::Root(std::shared_ptr<Command> next) : Command("root", next, std::make_shared<Root>()) {
     // intentionally blank
 }
 
@@ -346,7 +363,7 @@ std::unique_ptr<custom_interfaces::msg::Command> Root::get_ros2_message() {
     return command_msg;
 }
 
-Finish::Finish() : Command(nullptr, nullptr) {
+Finish::Finish() : Command("finish", nullptr, nullptr) {
     // intentionally blank
 }
 

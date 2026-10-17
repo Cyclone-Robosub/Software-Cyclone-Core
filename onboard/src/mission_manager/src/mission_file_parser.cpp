@@ -1,6 +1,7 @@
 #include "mission_file_parser.hpp"
 
 #include <fstream>
+#include <iostream>
 #include <map>
 
 
@@ -32,6 +33,10 @@ bool MissionFileParser::new_mission_available() {
     return next_mission_index < parsed_missions.size();
 }
 
+uint8_t MissionFileParser::get_current_mission_index() {
+    return (next_mission_index == 0) ? 0 : (next_mission_index - 1);
+}
+
 bool MissionFileParser::jump_to_mission(uint8_t mission_index) {
     if (mission_index >= parsed_missions.size()) {
         return false;
@@ -42,6 +47,33 @@ bool MissionFileParser::jump_to_mission(uint8_t mission_index) {
 
 std::shared_ptr<Root> MissionFileParser::get_next_mission() {
     return parsed_missions[next_mission_index++];
+}
+
+void MissionFileParser::print_mission_tree_at_index(uint8_t mission_index) {
+    if (mission_index >= parsed_missions.size()) {
+        // TODO better error handling
+        return;
+    }
+    print_mission_tree(parsed_missions[mission_index], 0);
+}
+
+void MissionFileParser::print_mission_tree(std::shared_ptr<Command> tree, uint8_t num_spaces) {
+    std::cout << tree->get_name() << "\n";
+    if (!tree->get_next()->mission_complete()) {
+        for (int i = 0; i < num_spaces; i++) {
+            std::cout << " ";
+        }
+        std::cout << "|--next: ";
+        print_mission_tree(tree->get_next(), num_spaces + 3);
+    }
+
+    if (!tree->get_failure()->mission_complete()) {
+        for (int i = 0; i < num_spaces; i++) {
+            std::cout << " ";
+        }
+        std::cout << "|--fail: ";
+        print_mission_tree(tree->get_failure(), num_spaces + 3);
+    }
 }
 
 // TODO: add trick id if it exists
@@ -62,6 +94,7 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
 
             if (action == "drive_to_world_waypoint") {
                 command_entry = std::make_shared<DriveToWorldWaypoint>(
+                    reference,
                     make_waypoint(parameters["goal_waypoint"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
@@ -70,6 +103,7 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
                 );
             } else if (action == "drive_to_world_waypoint_seeking") {
                 command_entry = std::make_shared<DriveToWorldWaypointSeeking>(
+                    reference,
                     make_waypoint(parameters["goal_waypoint"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     string_to_array(parameters["object_id"]),
@@ -78,10 +112,12 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
                 );
             } else if (action == "idle") {
                 command_entry = std::make_shared<Idle>(
+                    reference,
                     parameters["duration"]
                 );
             } else if (action == "track_object_waypoint") {
                 command_entry = std::make_shared<TrackObjectWaypoint>(
+                    reference,
                     make_waypoint(parameters["tracking_position"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
@@ -91,6 +127,7 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
                 );
             } else if (action == "duration_trick") {
                 command_entry = std::make_shared<DurationTrick>(
+                    reference,
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
                     string_to_array(parameters["trick_id"]),
@@ -100,6 +137,7 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
                 );
             } else if (action == "distance_trick") {
                 command_entry = std::make_shared<DistanceTrick>(
+                    reference,
                     make_waypoint(parameters["destination_position"]),
                     make_waypoint_mask(parameters["waypoint_mask"]),
                     make_tolerance(parameters["tolerance"]),
