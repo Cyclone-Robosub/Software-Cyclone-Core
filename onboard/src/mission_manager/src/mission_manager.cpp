@@ -13,7 +13,8 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
     go(false),
     mission_running(false),
     cancel_mission(false),
-    timed_out(false) {
+    timed_out(false),
+    last_mission_status_update(std::chrono::steady_clock::now()) {
         command_publisher = this->create_publisher<custom_interfaces::msg::Command>("current_command", 10);
         toggle_ready_service =  this->create_service<std_srvs::srv::Trigger>("ready_signal_service", std::bind(&MissionManager::trigger_ready_signal, this, std::placeholders::_1, std::placeholders::_2));
         ready_pub_service =  this->create_service<std_srvs::srv::Trigger>("pub_ready_status", std::bind(&MissionManager::pub_ready_status_from_service, this, std::placeholders::_1, std::placeholders::_2));
@@ -22,7 +23,7 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
         heartbeat_timer = this->create_wall_timer(500ms, std::bind(&MissionManager::heartbeat_callback, this));
         heartbeat_publisher = this->create_publisher<std_msgs::msg::Empty>("mission_manager_heartbeat", 10);
         current_ready_status_publisher = this->create_publisher<std_msgs::msg::Bool>("current_ready_state", 10);
-        // current_mission_status_publisher = this->create_publisher<std_msgs::msg::Bool>("mission_status", 10); // TODO: show current mission, command, and duration on dashboard
+        current_mission_status_publisher = this->create_publisher<custom_interfaces::msg::MissionStatus>("mission_status", 10);
         // TODO (Declan): service to dynamically add mission file (give file name, adds to parser) "add_mission_file"
         // TODO (Declan): service to dynamically add folder with mission files (low priority)
 }
@@ -52,7 +53,6 @@ void MissionManager::run_missions() {
     // First mission is root: call get_next() on that to get first real command
     std::shared_ptr<Command> current_command = parser->get_next_mission()->get_next();
     while (!(current_command->mission_complete()) && rclcpp::ok()) {
-        std::cout << "new command\n";
         auto current_command_msg = current_command->start_command_and_get_message();
         command_publisher->publish(*current_command_msg);
         current_command->custom_start_action();
@@ -62,6 +62,7 @@ void MissionManager::run_missions() {
          * - The command meets seperate custom success criteria 
         */
         while (!status_received && rclcpp::ok()) {
+            publish_mission_status(current_command, parser->get_current_mission_name());
             if (current_command->timeout_exceeded()) {
                 status_mutex.lock();
                 command_successful = false;
@@ -157,6 +158,20 @@ void MissionManager::command_result_callback(custom_interfaces::msg::CommandResu
 void MissionManager::heartbeat_callback() {
     auto msg = std_msgs::msg::Empty();
     heartbeat_publisher->publish(msg);
+}
+
+void MissionManager::publish_mission_status(std::shared_ptr<Command> current_command, std::string mission_name) {
+    auto now = std::chrono::steady_clock::now();
+    if (now - last_mission_status_update < 100ms) {
+        return;
+    }
+    last_mission_status_update = now;
+    auto msg = custom_interfaces::msg::MissionStatus();
+    msg.current_mission_name = mission_name;
+    msg.current_command_name = current_command->get_name();
+    msg.seconds_total = current_command->get_initial_duration_seconds();
+    msg.seconds_remaining = current_command->get_seconds_remaining();
+    current_mission_status_publisher->publish(msg);
 }
 
 #ifndef ENABLE_TESTING

@@ -28,6 +28,8 @@ public:
     virtual void set_failure(std::shared_ptr<Command> command);
     virtual bool mission_complete();
     virtual bool timeout_exceeded();
+    virtual double get_seconds_remaining();
+    virtual double get_initial_duration_seconds();
     virtual void custom_start_action();
     virtual void custom_finish_action();
     virtual bool custom_success_criteria_met();
@@ -114,6 +116,8 @@ public:
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
     virtual bool custom_success_criteria_met() override;
+    virtual double get_seconds_remaining() override;
+    virtual double get_initial_duration_seconds() override;
 protected:
     double duration;
 };

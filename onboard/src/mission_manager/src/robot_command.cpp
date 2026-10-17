@@ -55,6 +55,19 @@ bool Command::mission_complete() {
     return false;
 }
 
+double Command::get_seconds_remaining() {
+    if (timeout == -1) {
+        return -1;
+    }
+    std::chrono::time_point now = std::chrono::steady_clock::now();
+    auto ms_remaining = (start_time + (timeout * 1s)) - now;
+    return ms_remaining / 1s;
+}
+
+double Command::get_initial_duration_seconds() {
+    return timeout;
+}
+
 bool Command::timeout_exceeded() {
     if (timeout < 0) {
         return false;
@@ -184,6 +197,19 @@ Idle::Idle(std::string name, std::shared_ptr<Command> next, std::shared_ptr<Comm
 
 Idle::Idle(std::string name, double duration) : Command(name), duration(duration) {
     // intentionally blank
+}
+
+double Idle::get_seconds_remaining() {
+    if (duration == -1) {
+        return -1;
+    }
+    std::chrono::time_point now = std::chrono::steady_clock::now();
+    auto ms_remaining = (start_time + (duration * 1s)) - now;
+    return ms_remaining / 1s;
+}
+
+double Idle::get_initial_duration_seconds() {
+    return duration;
 }
 
 std::unique_ptr<custom_interfaces::msg::Command> Idle::get_ros2_message() {
