@@ -26,6 +26,7 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
         current_mission_status_publisher = this->create_publisher<custom_interfaces::msg::MissionStatus>("mission_status", 10);
         // TODO (Declan): service to dynamically add mission file (give file name, adds to parser) "add_mission_file"
         // TODO (Declan): service to dynamically add folder with mission files (low priority)
+        pub_ready_status();
 }
 
 void MissionManager::work_loop() {
