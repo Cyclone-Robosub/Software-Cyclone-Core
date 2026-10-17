@@ -45,7 +45,6 @@ std::shared_ptr<Root> MissionFileParser::get_next_mission() {
 }
 
 // TODO: add trick id if it exists
-// TODO: add timeout field (must exist)
 // TODO: handle bad parsing (maybe catch exception, report, abort)
 void MissionFileParser::parse_files(std::vector<std::string> files) {
     for (std::string file_name : files) {

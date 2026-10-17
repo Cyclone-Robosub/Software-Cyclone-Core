@@ -20,18 +20,24 @@ public:
     Command(double timeout);
     Command(std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double timeout = -1);
 
-    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() = 0;
+    virtual std::unique_ptr<custom_interfaces::msg::Command> start_command_and_get_message();
     virtual std::shared_ptr<Command> get_next();
     virtual std::shared_ptr<Command> get_failure();
     virtual void set_next(std::shared_ptr<Command> command);
     virtual void set_failure(std::shared_ptr<Command> command);
     virtual bool mission_complete();
-    virtual bool timeout_exceeded(std::chrono::time_point<std::chrono::steady_clock> start_time);
+    virtual bool timeout_exceeded();
+    virtual void custom_start_action();
+    virtual void custom_finish_action();
+    virtual bool custom_success_criteria_met();
 
 protected:
+    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() = 0;
+
     std::shared_ptr<Command> next;
     std::shared_ptr<Command> failure;
     std::string name; // TODO: add to constructors
+    std::chrono::time_point<std::chrono::steady_clock> start_time;
     double timeout; // TODO: add to constructors
 };
 
@@ -56,9 +62,8 @@ public:
         std::array<uint8_t,16> trick_id = {'\0'}
     );
 
-    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
-
 protected:
+    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
     std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint;
     std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
     std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
@@ -87,9 +92,8 @@ public:
         std::array<uint8_t,16> trick_id = {'\0'}
     );
 
-    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
-
 protected:
+    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
     std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint;
     std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
     std::array<uint8_t,16> object_id;
@@ -105,6 +109,7 @@ public:
     Idle(std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double duration);
 
     virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
+    virtual bool custom_success_criteria_met() override;
 protected:
     double duration;
 };
@@ -132,9 +137,8 @@ public:
         std::array<uint8_t,16> trick_id = {'\0'}
     );
 
-    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
-
 protected:
+    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
     std::unique_ptr<custom_interfaces::msg::Pose6D> tracking_position;
     std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
     std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
@@ -164,9 +168,8 @@ public:
         double timeout
     );
 
-    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
-
 protected:
+    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
     std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
     std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
     std::array<uint8_t,16> trick_id;
@@ -195,9 +198,8 @@ public:
         double timeout
     );
 
-    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
-
 protected:
+    virtual std::unique_ptr<custom_interfaces::msg::Command> get_ros2_message() override;
     std::unique_ptr<custom_interfaces::msg::Pose6D> destination_position;
     std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask;
     std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance;
