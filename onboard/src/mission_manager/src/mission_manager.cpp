@@ -51,11 +51,12 @@ void MissionManager::run_missions() {
     // First mission is root: call get_next() on that to get first real command
     std::shared_ptr<Command> current_command = parser->get_next_mission()->get_next();
     while (!(current_command->mission_complete()) && rclcpp::ok()) {
-        auto current_command_msg = current_command->get_ros2_message();
+        std::cout << "new command\n";
+        auto current_command_msg = current_command->start_command_and_get_message();
         command_publisher->publish(*current_command_msg);
-        std::chrono::time_point start_time = std::chrono::steady_clock::now();
-        while (!status_received && rclcpp::ok()) {
-            if (current_command->timeout_exceeded(start_time)) {
+        current_command->custom_start_action();
+        while ((!status_received || !current_command->custom_success_criteria_met()) && rclcpp::ok()) {
+            if (current_command->timeout_exceeded()) {
                 status_mutex.lock();
                 command_successful = false;
                 timed_out = true;
@@ -73,6 +74,7 @@ void MissionManager::run_missions() {
         status_mutex.lock();
         status_received = false;
         if (command_successful) {
+            current_command->custom_finish_action();
             current_command = current_command->get_next();
         } else {
             current_command = current_command->get_failure();

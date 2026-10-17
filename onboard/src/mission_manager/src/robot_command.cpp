@@ -23,6 +23,12 @@ Command::Command(std::shared_ptr<Command> next, std::shared_ptr<Command> failure
         // intentionally blank
 }
 
+
+std::unique_ptr<custom_interfaces::msg::Command> Command::start_command_and_get_message() {
+    start_time = std::chrono::steady_clock::now();
+    return get_ros2_message();
+}
+
 std::shared_ptr<Command> Command::get_next() {
     return next;
 }
@@ -42,12 +48,27 @@ bool Command::mission_complete() {
     return false;
 }
 
-bool Command::timeout_exceeded(std::chrono::time_point<std::chrono::steady_clock> start_time) {
+bool Command::timeout_exceeded() {
     if (timeout < 0) {
         return false;
     }
     std::chrono::time_point now = std::chrono::steady_clock::now();
     return now > (start_time + (timeout * 1000 * 1ms));
+}
+
+void Command::custom_start_action() {
+    /* nothing to do: some commands might have something though, like activating the dropper. */
+    return;
+}
+
+void Command::custom_finish_action() {
+    /* nothing to do: some commands might have something though, like activating the dropper. */
+    return;
+}
+
+bool Command::custom_success_criteria_met() {
+    /* nothing special for base Command, but some might have extra. */
+    return true;
 }
 
 DriveToWorldWaypoint::DriveToWorldWaypoint(
@@ -162,6 +183,15 @@ std::unique_ptr<custom_interfaces::msg::Command> Idle::get_ros2_message() {
     auto command_msg = std::make_unique<custom_interfaces::msg::Command>();
     command_msg->command = command_msg->IDLE;
     return command_msg;
+}
+
+bool Idle::custom_success_criteria_met() {
+    /* Runs indefinitely, so can be ended at any time. */
+    if (duration < 0) {
+        return true;
+    }
+    std::chrono::time_point now = std::chrono::steady_clock::now();
+    return now > (start_time + (duration * 1000 * 1ms));
 }
 
 TrackObjectWaypoint::TrackObjectWaypoint(
