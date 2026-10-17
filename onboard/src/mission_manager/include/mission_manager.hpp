@@ -27,6 +27,7 @@ private:
     void command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result);
     void heartbeat_callback();
     void publish_mission_status(std::shared_ptr<Command> current_command, std::string mission_name);
+    std::array<uint8_t,32> string_to_array(std::string string);
 
     /* Sent to MATLAB */
     rclcpp::Publisher<custom_interfaces::msg::Command>::SharedPtr command_publisher;

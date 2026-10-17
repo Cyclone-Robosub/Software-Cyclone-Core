@@ -162,16 +162,27 @@ void MissionManager::heartbeat_callback() {
 
 void MissionManager::publish_mission_status(std::shared_ptr<Command> current_command, std::string mission_name) {
     auto now = std::chrono::steady_clock::now();
-    if (now - last_mission_status_update < 100ms) {
+    if (now - last_mission_status_update < 33ms) { // 30 hz
         return;
     }
     last_mission_status_update = now;
     auto msg = custom_interfaces::msg::MissionStatus();
-    msg.current_mission_name = mission_name;
-    msg.current_command_name = current_command->get_name();
+    msg.current_mission_name = string_to_array(mission_name);
+    msg.current_command_name = string_to_array(current_command->get_name());
     msg.seconds_total = current_command->get_initial_duration_seconds();
     msg.seconds_remaining = current_command->get_seconds_remaining();
     current_mission_status_publisher->publish(msg);
+}
+
+std::array<uint8_t,32> MissionManager::string_to_array(std::string string) {
+    std::array<uint8_t,32> array = {0};
+    if (string.size() > 32) {
+        RCLCPP_WARN(this->get_logger(), "String too long! Result will be truncated.");
+    }
+    for (int i = 0; i < 32; i++) {
+        array[i] = string[i];
+    }
+    return array;
 }
 
 #ifndef ENABLE_TESTING
