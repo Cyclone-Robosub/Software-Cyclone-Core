@@ -4,6 +4,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <custom_interfaces/msg/drr.hpp>
 #include <custom_interfaces/msg/vr.hpp>
+#include <custom_interfaces/msg/imu.hpp>
 #include "std_msgs/msg/bool.hpp"
 #include "fd_interface.hpp"
 #include <mutex>
@@ -22,19 +23,21 @@ public:
 
 class Data_Logger : public rclcpp::Node {
 public:
-    Data_Logger(std::unique_ptr<FD_Interface> drr_fd, std::unique_ptr<FD_Interface> vr_fd);
+    Data_Logger(std::unique_ptr<FD_Interface> drr_fd, std::unique_ptr<FD_Interface> vr_fd, std::unique_ptr<FD_Interface> imu_fd);
     static std::string get_current_time();
 
 private:
     std::unique_ptr<FD_Interface> drr_fd;
     std::unique_ptr<FD_Interface> vr_fd;
-    // std::unique_ptr<FD_Interface> imu_fd;
+    std::unique_ptr<FD_Interface> imu_fd;
 
     rclcpp::Subscription<custom_interfaces::msg::DRR>::SharedPtr drr_subscription;
     rclcpp::Subscription<custom_interfaces::msg::VR>::SharedPtr vr_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::Imu>::SharedPtr imu_subscription;
 
     void dead_reck_report_received_callback(custom_interfaces::msg::DRR::UniquePtr drr_msg);
     void velocity_report_received_callback(custom_interfaces::msg::VR::UniquePtr vr_msg);
+    void imu_data_received_callback(custom_interfaces::msg::Imu::UniquePtr imu_msg);
 };
 
 #endif // DATA_LOGGER_HPP
