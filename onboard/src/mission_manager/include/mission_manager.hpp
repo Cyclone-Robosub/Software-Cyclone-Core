@@ -7,6 +7,7 @@
 #include "std_srvs/srv/trigger.hpp"
 #include "custom_interfaces/msg/command_result.hpp"
 #include "custom_interfaces/msg/mission_status.hpp"
+#include "custom_interfaces/srv/get_file.hpp"
 #include "robot_command.hpp"
 #include "mission_file_parser.hpp"
 #include <mutex>
@@ -24,6 +25,8 @@ private:
     void trigger_ready_signal(const std::shared_ptr<std_srvs::srv::Trigger::Request> request, std::shared_ptr<std_srvs::srv::Trigger::Response> response);
     void pub_ready_status_from_service(const std::shared_ptr<std_srvs::srv::Trigger::Request> request, std::shared_ptr<std_srvs::srv::Trigger::Response> response);
     void go_signal_callback(std_msgs::msg::Bool::SharedPtr signal);
+    void add_mission_file_callback(const std::shared_ptr<custom_interfaces::srv::GetFile::Request> request, std::shared_ptr<custom_interfaces::srv::GetFile::Response> response);
+    void add_mission_list_callback(const std::shared_ptr<custom_interfaces::srv::GetFile::Request> request, std::shared_ptr<custom_interfaces::srv::GetFile::Response> response);
     void command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result);
     void heartbeat_callback();
     void publish_mission_status_throttled(std::shared_ptr<Command> current_command, std::string mission_name);
@@ -48,6 +51,11 @@ private:
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr toggle_ready_service;
     /* On receive, force a publish of the current ready/unready state */
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr ready_pub_service;
+
+    /*DESCRIPTION HERE*/
+    rclcpp::Service<custom_interfaces::srv::GetFile>::SharedPtr add_mission_file;
+    /*DESCRIPTION HERE*/
+    rclcpp::Service<custom_interfaces::srv::GetFile>::SharedPtr add_mission_list;
 
     rclcpp::TimerBase::SharedPtr heartbeat_timer;
 

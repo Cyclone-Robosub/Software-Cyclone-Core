@@ -16,16 +16,17 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
     timed_out(false),
     last_mission_status_update(std::chrono::steady_clock::now()) {
         command_publisher = this->create_publisher<custom_interfaces::msg::Command>("current_command", 10);
-        toggle_ready_service =  this->create_service<std_srvs::srv::Trigger>("ready_signal_service", std::bind(&MissionManager::trigger_ready_signal, this, std::placeholders::_1, std::placeholders::_2));
-        ready_pub_service =  this->create_service<std_srvs::srv::Trigger>("pub_ready_status", std::bind(&MissionManager::pub_ready_status_from_service, this, std::placeholders::_1, std::placeholders::_2));
-        go_signal_subscription = this->create_subscription<std_msgs::msg::Bool>("go_signal", 10, std::bind(&MissionManager::go_signal_callback, this, std::placeholders::_1));
-        command_result_subscription = this->create_subscription<custom_interfaces::msg::CommandResult>("command_result", 10, std::bind(&MissionManager::command_result_callback, this, std::placeholders::_1));
-        heartbeat_timer = this->create_wall_timer(500ms, std::bind(&MissionManager::heartbeat_callback, this));
         heartbeat_publisher = this->create_publisher<std_msgs::msg::Empty>("mission_manager_heartbeat", 10);
         current_ready_status_publisher = this->create_publisher<std_msgs::msg::Bool>("current_ready_state", 10);
         current_mission_status_publisher = this->create_publisher<custom_interfaces::msg::MissionStatus>("mission_status", 10);
-        // TODO (Declan): service to dynamically add mission file (give file name, adds to parser) "add_mission_file"
-        // TODO (Declan): "add_meta_file" / "add_config_file" to add 
+        go_signal_subscription = this->create_subscription<std_msgs::msg::Bool>("go_signal", 10, std::bind(&MissionManager::go_signal_callback, this, std::placeholders::_1));
+        command_result_subscription = this->create_subscription<custom_interfaces::msg::CommandResult>("command_result", 10, std::bind(&MissionManager::command_result_callback, this, std::placeholders::_1));
+        toggle_ready_service =  this->create_service<std_srvs::srv::Trigger>("ready_signal_service", std::bind(&MissionManager::trigger_ready_signal, this, std::placeholders::_1, std::placeholders::_2));
+        ready_pub_service =  this->create_service<std_srvs::srv::Trigger>("pub_ready_status", std::bind(&MissionManager::pub_ready_status_from_service, this, std::placeholders::_1, std::placeholders::_2));
+        add_mission_file = this->create_service<custom_interfaces::srv::GetFile>("add_mission_file", std::bind(&MissionManager::add_mission_file_callback, this, std::placeholders::_1, std::placeholders::_2));
+        add_mission_list = this->create_service<custom_interfaces::srv::GetFile>("add_mission_list", std::bind(&MissionManager::add_mission_list_callback, this, std::placeholders::_1, std::placeholders::_2));
+        heartbeat_timer = this->create_wall_timer(500ms, std::bind(&MissionManager::heartbeat_callback, this));
+
         pub_ready_status();
 }
 
@@ -143,7 +144,41 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
     }
 }
 
-// Declan Functions Here
+void MissionManager::add_mission_file_callback(const std::shared_ptr<custom_interfaces::srv::GetFile::Request> request, std::shared_ptr<custom_interfaces::srv::GetFile::Response> response) {
+    // Fail if filename doesn't end with '.json'
+    if (request->file_name.size() < 5 || request->file_name.substr(request->file_name.size()-5) != ".json") {
+        response->success = false;
+        response->message = "Mission file " + request->file_name + " is not a .json file";
+        return;
+    }
+    try {
+        parser->add_file_to_parse(request->file_name);
+        parser->parse_new_files();
+    } catch (const std::invalid_argument& e) {
+        response->success = false;
+        response->message = "Parser could not read file" + request->file_name;
+    }
+    response->success = true;
+    response->message = request->file_name + "parsed successfully";
+}
+
+void MissionManager::add_mission_list_callback(const std::shared_ptr<custom_interfaces::srv::GetFile::Request> request, std::shared_ptr<custom_interfaces::srv::GetFile::Response> response) {
+    // Fail if filename doesn't end with '.txt'
+    if (request->file_name.size() < 4 || request->file_name.substr(request->file_name.size()-4) != ".txt") {
+        response->success = false;
+        response->message = "Mission list " + request->file_name + " is not a .txt file";
+        return;
+    }
+    try {
+        parser->parse_mission_list_file(request->file_name);
+        parser->parse_new_files();
+    } catch (const std::invalid_argument& e) {
+        response->success = false;
+        response->message = "Parser could not read file" + request->file_name;
+    }
+    response->success = true;
+    response->message = request->file_name + "parsed successfully";
+}
 
 void MissionManager::command_result_callback(custom_interfaces::msg::CommandResult::SharedPtr result) {
     status_mutex.lock();
@@ -200,8 +235,6 @@ std::array<uint8_t,32> MissionManager::string_to_array(std::string string) {
 int main(int argc, char * argv[]) {
     rclcpp::init(argc, argv);
     auto parser = std::make_unique<MissionFileParser>();
-    // Change to automatically parse all files in always_run.txt
-    // Make new parser functions "parse_mission_list_file" and "parse_always_run_file"
     parser->parse_always_run_file();
     parser->parse_all_files();
 
