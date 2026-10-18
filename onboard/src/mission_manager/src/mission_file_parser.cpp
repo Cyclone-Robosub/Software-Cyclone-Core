@@ -27,7 +27,6 @@ void MissionFileParser::add_file_to_parse(std::string file_name) {
     files_to_parse.push_back(file_name);
 }
 
-// Declan Parser Functions
 void MissionFileParser::parse_mission_list_file(std::string file_name) {
     // TODO: more robust path handling
     auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
@@ -121,6 +120,7 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
         if (!file.good()) {
             fprintf(stderr, "Mission file '%s' not recognized!\n", file_name.c_str());
             continue;
+            throw std::invalid_argument("Mission file not recognized");
         }
         json mission_file_data = json::parse(file);
 
