@@ -33,10 +33,11 @@ void MissionFileParser::parse_mission_list_file(std::string file_name) {
     if (!file.good()) {
         fprintf(stderr, "Mission list '%s' not recognized!\n", file_name.c_str());
         return;
+        throw std::invalid_argument("Mission list not recognized");
     }
     std::string mission_file;
     while (getline(file, mission_file)) {
-        if (mission_file.size() > 0 && mission_file[0] == '#') { continue; }
+        if (mission_file.size() == 0 || mission_file[0] == '#') { continue; }
         add_file_to_parse(mission_file);
     }
 }
