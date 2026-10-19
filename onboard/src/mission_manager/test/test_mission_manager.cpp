@@ -32,6 +32,18 @@ TEST_F(TestSubscriber, NodeConstruction) {
     EXPECT_EQ(node->get_name(), std::string("mission_manager"));
 }
 
+// When more robust pathing exists, should use a seperate test_mission_files folder
+TEST_F(TestSubscriber, MissionList) {
+    create_node();
+    // node->parse_mission_list_file("test_file.txt");
+    // node->parse_new_files();
+
+    // // Add checking for proper error thrown from always_run.txt and garbage_file
+    // EXPECT_EQ(node->get_current_mission_name(), "sample_mission_file.json");
+    // node->jump_to_mission(1);
+    // EXPECT_EQ(node->get_current_mission_name(), "sample_mission_file_2.json");
+}
+
 #ifdef ENABLE_TESTING
 
 int main(int argc, char** argv) {

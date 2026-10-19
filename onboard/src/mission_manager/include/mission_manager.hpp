@@ -52,9 +52,9 @@ private:
     /* On receive, force a publish of the current ready/unready state */
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr ready_pub_service;
 
-    /*DESCRIPTION HERE*/
+    /*Add given .json file to parsed mission files*/
     rclcpp::Service<custom_interfaces::srv::GetFile>::SharedPtr add_mission_file;
-    /*DESCRIPTION HERE*/
+    /*Add all .json files in given .txt file to parsed mission files*/
     rclcpp::Service<custom_interfaces::srv::GetFile>::SharedPtr add_mission_list;
 
     rclcpp::TimerBase::SharedPtr heartbeat_timer;
