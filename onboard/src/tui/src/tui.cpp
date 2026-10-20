@@ -183,6 +183,7 @@ void Dashboard::dvl_vr_callback(custom_interfaces::msg::VR::UniquePtr vr) {
     velocity.x = vr->velocity_data.x;
     velocity.y = vr->velocity_data.y;
     velocity.z = vr->velocity_data.z;
+    velocity.altitude = vr->altitude;
     velocity.timestamp = std::chrono::steady_clock::now();
 }
 
@@ -227,41 +228,41 @@ void Dashboard::matlab_debug_actual_pt_received_callback(custom_interfaces::msg:
     debug_position.z = msg->position.z;
     debug_position.timestamp = std::chrono::steady_clock::now();
 
-    debug_orientation.roll = msg->angle.x; // roll
-    debug_orientation.pitch = msg->angle.y; // pitch
-    debug_orientation.yaw = msg->angle.z; // yaw
+    debug_orientation.x = msg->orientation.x; // roll
+    debug_orientation.y = msg->orientation.y; // pitch
+    debug_orientation.z = msg->orientation.z; // yaw
     debug_orientation.timestamp = std::chrono::steady_clock::now();
 
-    debug_angle_rate.vx = msg->angle_rate.x;
-    debug_angle_rate.vy = msg->angle_rate.y;
-    debug_angle_rate.vz = msg->angle_rate.z;
+    debug_angle_rate.x = msg->angle_rate.x; // vx
+    debug_angle_rate.y = msg->angle_rate.y; // vy
+    debug_angle_rate.z = msg->angle_rate.z; // vz
     debug_angle_rate.timestamp = std::chrono::steady_clock::now();
 
-    debug_angle_velocity.p = msg->angle_velocity.x; // p
-    debug_angle_velocity.q = msg->angle_velocity.y; // q
-    debug_angle_velocity.r = msg->angle_velocity.z; // r
+    debug_angle_velocity.x = msg->angle_velocity.x; // p
+    debug_angle_velocity.y = msg->angle_velocity.y; // q
+    debug_angle_velocity.z = msg->angle_velocity.z; // r
     debug_angle_rate.timestamp = std::chrono::steady_clock::now(); 
 }
 
-void Dashboard::matlab_debug_set_pt_callback(custom_interfaces::msg::DebugState::UniquePtr message) {
+void Dashboard::matlab_debug_set_pt_received_callback(custom_interfaces::msg::DebugState::UniquePtr msg) {
     debug_position_setpt.x = msg->position.x;
     debug_position_setpt.y = msg->position.y;
     debug_position_setpt.z = msg->position.z;
     debug_position_setpt.timestamp = std::chrono::steady_clock::now();
 
-    debug_orientation_setpt.roll = msg->angle.x; // roll
-    debug_orientation_setpt.pitch = msg->angle.y; // pitch
-    debug_orientation_setpt.yaw = msg->angle.z; // yaw
+    debug_orientation_setpt.x = msg->orientation.x; // roll
+    debug_orientation_setpt.y = msg->orientation.y; // pitch
+    debug_orientation_setpt.z = msg->orientation.z; // yaw
     debug_orientation_setpt.timestamp = std::chrono::steady_clock::now();
 
-    debug_angle_rate_setpt.vx = msg->angle_rate.x;
-    debug_angle_rate_setpt.vy = msg->angle_rate.y;
-    debug_angle_rate_setpt.vz = msg->angle_rate.z;
+    debug_angle_rate_setpt.x = msg->angle_rate.x; // vx
+    debug_angle_rate_setpt.y = msg->angle_rate.y; // vy
+    debug_angle_rate_setpt.z = msg->angle_rate.z; // vz
     debug_angle_rate_setpt.timestamp = std::chrono::steady_clock::now();
 
-    debug_angle_velocity_setpt.p = msg->angle_velocity.x; // p
-    debug_angle_velocity_setpt.q = msg->angle_velocity.y; // q
-    debug_angle_velocity_setpt.r = msg->angle_velocity.z; // r
+    debug_angle_velocity_setpt.x = msg->angle_velocity.x; // p
+    debug_angle_velocity_setpt.y = msg->angle_velocity.y; // q
+    debug_angle_velocity_setpt.z = msg->angle_velocity.z; // r
     debug_angle_rate_setpt.timestamp = std::chrono::steady_clock::now();
 }
 
@@ -425,7 +426,7 @@ void Dashboard::work_loop() {
 void Dashboard::refresh_display() {
     auto now = std::chrono::steady_clock::now();
     seconds_since_ping = (double)((now - most_recent_ping) / 1ms) / (double)1000;
-    tui->refresh_display(22, current_control_mode,
+    tui->refresh_display(21, current_control_mode,
                              thrust_interface_heartbeat,
                              mux_heartbeat,
                              cli_heartbeat,
@@ -442,7 +443,7 @@ void Dashboard::refresh_display() {
                              position,
                              orientation,
                              status,
-                             debug,
+                            //  debug,
                              ping_ok,
                              rtt,
                              seconds_since_ping,
@@ -634,7 +635,7 @@ void Dashboard_TUI::printFloatingPoint(double coordinate) {
     }
 }
 
-void Dashboard_TUI::display_vr(const int col_number, DVL_Data velocity) {
+void Dashboard_TUI::display_vr(const int col_number, DVL_VR_Data velocity) {
     jump_to_column(col_number);
     std::string fresh = dvl_fresh(velocity);
     std::string clear = "\x1B[39;22m";
@@ -644,6 +645,8 @@ void Dashboard_TUI::display_vr(const int col_number, DVL_Data velocity) {
     printFloatingPoint(velocity.y);
     printf("%s | z: %s", clear.c_str(), fresh.c_str());
     printFloatingPoint(velocity.z);
+    printf("%s | alt: %s", clear.c_str(), fresh.c_str());
+    printFloatingPoint(velocity.altitude);
     printf("%s |\n", clear.c_str());
 }
 
@@ -782,42 +785,42 @@ void Dashboard_TUI::display_mission_status(const int col_number, Mission_Status 
     fflush(stdout);
 }
 
-void Dashboard_TUI::display_debug(const int col_number, Debug_Message debug) {
-    std::string message = std::string(debug.message);
-    jump_to_column(col_number);
-    if (fresh_evaluation_time - debug.timestamp < 0.5s) {
-        write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
-        fflush(stdout);
-    }
-    int message_length = message.length();
-    int curr_debug_length = message_length;
-    int col_offset = 0;
-    for (int i = 0; i < prev_debug_length; i++) { // this is pretty inefficient: better to write the full 35-char block at once. Seems harder though.
-        col_offset++;
-        if (col_offset > 0 && col_offset % 45 == 0) {
-            printf("\n");
-            jump_to_column(col_number);
-            col_offset = 0;
-        }
+// void Dashboard_TUI::display_debug(const int col_number, Debug_Message debug) {
+//     std::string message = std::string(debug.message);
+//     jump_to_column(col_number);
+//     if (fresh_evaluation_time - debug.timestamp < 0.5s) {
+//         write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
+//         fflush(stdout);
+//     }
+//     int message_length = message.length();
+//     int curr_debug_length = message_length;
+//     int col_offset = 0;
+//     for (int i = 0; i < prev_debug_length; i++) { // this is pretty inefficient: better to write the full 35-char block at once. Seems harder though.
+//         col_offset++;
+//         if (col_offset > 0 && col_offset % 45 == 0) {
+//             printf("\n");
+//             jump_to_column(col_number);
+//             col_offset = 0;
+//         }
 
-        if (i < message_length) {
-            char curr_char = message[i];
-            printf("%c", curr_char);
-            if (curr_char == '\n') {
-                jump_to_column(col_number);
-                curr_debug_length += 45;
-                col_offset = 0;
-            }
-        }
-        else {
-            printf(" ");
-        }
+//         if (i < message_length) {
+//             char curr_char = message[i];
+//             printf("%c", curr_char);
+//             if (curr_char == '\n') {
+//                 jump_to_column(col_number);
+//                 curr_debug_length += 45;
+//                 col_offset = 0;
+//             }
+//         }
+//         else {
+//             printf(" ");
+//         }
 
-    }
-    prev_debug_length = curr_debug_length;
-    printf("\n");
-    write(STDOUT_FILENO, "\x1B[39;22m\n", 9);
-}
+//     }
+//     prev_debug_length = curr_debug_length;
+//     printf("\n");
+//     write(STDOUT_FILENO, "\x1B[39;22m\n", 9);
+// }
 
 std::string Dashboard::get_ping() { // TODO: when robot looses connection ping hangs for ~10 seconds. Break into seperate thread
     int pipe_fds[2];
@@ -858,7 +861,7 @@ void Dashboard_TUI::display_tui(va_list args) {
     PWM_Data pwms_cli = va_arg(args, PWM_Data);
     PWM_Data pwms_ctrl = va_arg(args, PWM_Data);
     PWM_Data pwms_echo = va_arg(args, PWM_Data);
-    DVL_Data velocity = va_arg(args, DVL_Data);
+    DVL_VR_Data velocity = va_arg(args, DVL_VR_Data);
     DVL_Data position = va_arg(args, DVL_Data);
     DVL_Data orientation = va_arg(args, DVL_Data);
     Mission_Status status = va_arg(args, Mission_Status);

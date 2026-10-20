@@ -15,45 +15,49 @@
 #include "custom_interfaces/msg/pwms.hpp"
 #include "custom_interfaces/msg/vr.hpp"
 #include "custom_interfaces/msg/drr.hpp"
-#include "custom_interfaces/msg/debugflag.hpp"
-#include "custom_interfaces/msg/debugstate.hpp"
+#include "custom_interfaces/msg/debug_flag.hpp"
+#include "custom_interfaces/msg/debug_state.hpp"
 #include "custom_interfaces/msg/mission_status.hpp"
 #include "custom_interfaces/srv/control_mode.hpp"
 
 using namespace rclcpp;
 
-typedef struct pwm_data {
+struct PWM_Data {
     std::array<int,8> pwms = {0};
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
-} PWM_Data;
+};
 
-typedef struct dvl_data {
+struct DVL_Data {
     double x = 0;
     double y = 0;
     double z = 0;
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
-} DVL_Data;
+};
 
-typedef struct debug_flag_msg {
+struct DVL_VR_Data : DVL_Data {
+    double altitude = 0;
+};
+
+struct Debug_Flag_Msg {
     char name[16] = {0}; // one byte more so that we get a guaranteed null termination
-    float64 value = 0;
+    _Float64 value = 0;
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
-} Debug_Flag_Msg;
+};
 
-typedef struct debug_state_data {//position, position_setpoint
+struct Debug_State_Data {//position, position_setpoint
     double x = 0; 
     double y = 0;
     double z = 0;
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
-} Debug_State_Data;
+};
 
-typedef struct mission_status {
+struct Mission_Status {
     char current_mission_file[33] = {0} ;
     char current_command[33] = {0};
     double duration_seconds = 0;
     double seconds_remaining = 0;
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
-} Mission_Status;
+};
 
 class Dashboard_TUI : public TUI_Interface {
     public:
@@ -79,11 +83,11 @@ class Dashboard_TUI : public TUI_Interface {
         void display_all_pwms(PWM_Data pwms_cmd, PWM_Data pwms_cli, PWM_Data pwms_ctrl, PWM_Data pwms_echo);
         void display_connection_info(bool connection_ok, double seconds_since_ping, double ping_rtt, const int col_number);
         void printFloatingPoint(double coordinate);
-        void display_vr(const int col_number, DVL_Data velocity);
+        void display_vr(const int col_number, DVL_VR_Data velocity);
         void display_drr(const int col_number, DVL_Data position, DVL_Data orientation);
         void display_commands();
         void display_mission_status(const int col_number, Mission_Status status);
-        void display_debug(const int col_number, Debug_Message debug);
+        // void display_debug(const int col_number, Debug_Message debug);
         std::string dvl_fresh(DVL_Data dvl_data);
         std::string pwm_fresh(PWM_Data pwm_data);
         std::chrono::time_point<std::chrono::steady_clock> fresh_evaluation_time;
@@ -147,7 +151,11 @@ private:
     void dvl_vr_callback(custom_interfaces::msg::VR::UniquePtr vr);
     void dvl_drr_callback(custom_interfaces::msg::DRR::UniquePtr drr);
     void mission_status_received_callback(custom_interfaces::msg::MissionStatus::UniquePtr status_msg);
-    void matlab_debug_received_callback(custom_interfaces::msg::Debug::UniquePtr message);
+    void matlab_debug_f0_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr message);
+    void matlab_debug_f1_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr message);
+    void matlab_debug_f2_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr message);
+    void matlab_debug_actual_pt_received_callback(custom_interfaces::msg::DebugState::UniquePtr message);
+    void matlab_debug_set_pt_received_callback(custom_interfaces::msg::DebugState::UniquePtr message);
 
     void heartbeat_check_callback();
     bool no_heartbeat(std::chrono::time_point<std::chrono::steady_clock> now, std::chrono::time_point<std::chrono::steady_clock> heartbeat_time);
@@ -168,10 +176,7 @@ private:
     void clear_display();
     std::string get_ping();
 
-    bool thrust_interface_heartfor (int i = 0; i < 256; i ++) { // 256 = ROS message length. One less than Debug C++ struct length.
-        debug_stream_0.message[i] = message->message[i];
-    }
-    debug_stream_0.timestamp = std::chrono::steady_clock::now();beat = false;
+    bool thrust_interface_heartbeat = false;
     bool mux_heartbeat = false;
     bool cli_heartbeat = false;
     bool ctrl_heartbeat = false;
@@ -189,7 +194,7 @@ private:
     PWM_Data pwms_cli;
     PWM_Data pwms_ctrl;
     PWM_Data pwms_echo;
-    DVL_Data velocity;
+    DVL_VR_Data velocity;
     DVL_Data position;
     DVL_Data orientation;
 
@@ -206,6 +211,7 @@ private:
     Debug_State_Data debug_orientation_setpt;
     Debug_State_Data debug_angle_rate_setpt;
     Debug_State_Data debug_angle_velocity_setpt;
+
     Mission_Status status;
 
     rclcpp::Client<custom_interfaces::srv::ControlMode>::SharedPtr mux_client;
