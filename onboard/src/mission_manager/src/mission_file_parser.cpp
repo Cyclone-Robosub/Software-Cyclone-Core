@@ -162,6 +162,9 @@ void MissionFileParser::parse_new_files() {
                         trick_id
                     );
                 } else if (action == "idle") {
+                    if (trick_id.has_value()) {
+                        throw std::runtime_error("trick_id provided for idle, but idle doesn't accept trick_id");
+                    }
                     command_entry = std::make_shared<Idle>(
                         reference,
                         parameters["duration"]
@@ -217,7 +220,7 @@ void MissionFileParser::parse_new_files() {
             files_not_yet_parsed.pop();
         } catch (const std::exception& e) {
             // Temporary exception type, replace with custom exception
-            throw std::runtime_error("Was on command " + reference + " and failed to parse mission file " + file_name + ": " + e.what());
+            throw std::runtime_error("Was on command \"" + reference + "\" and failed to parse mission file \"" + file_name + "\": " + e.what());
         }
     }
 }
