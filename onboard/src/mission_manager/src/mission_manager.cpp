@@ -149,14 +149,16 @@ void MissionManager::add_mission_file_callback(const std::shared_ptr<custom_inte
     if (request->file_name.size() < 5 || request->file_name.substr(request->file_name.size()-5) != ".json") {
         response->success = false;
         response->message = "Mission file " + request->file_name + " is not a .json file";
+        RCLCPP_ERROR(this->get_logger(), response->message.c_str());
         return;
     }
     try {
         parser->add_file_to_parse(request->file_name);
         parser->parse_new_files();
-    } catch (const std::invalid_argument& e) {
+    } catch (const std::exception& e) {
         response->success = false;
-        response->message = "Parser could not read file" + request->file_name;
+        response->message = "Exception occured: " + std::string(e.what());
+        RCLCPP_ERROR(this->get_logger(), response->message.c_str());
     }
     response->success = true;
     response->message = request->file_name + "parsed successfully";
@@ -167,14 +169,16 @@ void MissionManager::add_mission_list_callback(const std::shared_ptr<custom_inte
     if (request->file_name.size() < 4 || request->file_name.substr(request->file_name.size()-4) != ".txt") {
         response->success = false;
         response->message = "Mission list " + request->file_name + " is not a .txt file";
+        RCLCPP_ERROR(this->get_logger(), response->message.c_str());
         return;
     }
     try {
         parser->parse_mission_list_file(request->file_name);
         parser->parse_new_files();
-    } catch (const std::invalid_argument& e) {
+    } catch (const std::exception& e) {
         response->success = false;
-        response->message = "Parser could not read file" + request->file_name;
+        response->message = "Exception occured: " + std::string(e.what());
+        RCLCPP_ERROR(this->get_logger(), response->message.c_str());
     }
     response->success = true;
     response->message = request->file_name + "parsed successfully";
@@ -235,8 +239,14 @@ std::array<uint8_t,32> MissionManager::string_to_array(std::string string) {
 int main(int argc, char * argv[]) {
     rclcpp::init(argc, argv);
     auto parser = std::make_unique<MissionFileParser>();
-    parser->parse_always_run_file();
-    parser->parse_all_files();
+    try {
+        parser->parse_always_run_file();
+        parser->parse_all_files();
+    } catch (std::exception& e) {
+        fprintf(stderr, "Exception occured: %s", e.what());
+        return 42;
+    }
+
 
     auto mission_manager = std::make_shared<MissionManager>(std::move(parser));
     
