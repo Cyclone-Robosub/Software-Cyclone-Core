@@ -15,7 +15,8 @@
 #include "custom_interfaces/msg/pwms.hpp"
 #include "custom_interfaces/msg/vr.hpp"
 #include "custom_interfaces/msg/drr.hpp"
-#include "custom_interfaces/msg/debug.hpp"
+#include "custom_interfaces/msg/debugflag.hpp"
+#include "custom_interfaces/msg/debugstate.hpp"
 #include "custom_interfaces/msg/mission_status.hpp"
 #include "custom_interfaces/srv/control_mode.hpp"
 
@@ -33,10 +34,18 @@ typedef struct dvl_data {
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
 } DVL_Data;
 
-typedef struct debug_message {
-    char message[257] = {0}; // one byte more so that we get a guaranteed null termination
+typedef struct debug_flag_msg {
+    char name[16] = {0}; // one byte more so that we get a guaranteed null termination
+    float64 value = 0;
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
-} Debug_Message;
+} Debug_Flag_Msg;
+
+typedef struct debug_state_data {//position, position_setpoint
+    double x = 0; 
+    double y = 0;
+    double z = 0;
+    std::chrono::time_point<std::chrono::steady_clock> timestamp;
+} Debug_State_Data;
 
 typedef struct mission_status {
     char current_mission_file[33] = {0} ;
@@ -114,7 +123,11 @@ private:
     rclcpp::Subscription<custom_interfaces::msg::VR>::SharedPtr dvl_vr_subscription;
     rclcpp::Subscription<custom_interfaces::msg::DRR>::SharedPtr dvl_drr_subscription;
     rclcpp::Subscription<custom_interfaces::msg::MissionStatus>::SharedPtr mission_status_subscription;
-    rclcpp::Subscription<custom_interfaces::msg::Debug>::SharedPtr matlab_debug_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::DebugFlag>::SharedPtr matlab_debug_flag_0_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::DebugFlag>::SharedPtr matlab_debug_flag_1_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::DebugFlag>::SharedPtr matlab_debug_flag_2_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::DebugState>::SharedPtr matlab_debug_actual_pt_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::DebugState>::SharedPtr matlab_debug_set_pt_subscription;
     rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr current_control_mode_subscription;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr ready_status_subscription;
     
@@ -155,7 +168,10 @@ private:
     void clear_display();
     std::string get_ping();
 
-    bool thrust_interface_heartbeat = false;
+    bool thrust_interface_heartfor (int i = 0; i < 256; i ++) { // 256 = ROS message length. One less than Debug C++ struct length.
+        debug_stream_0.message[i] = message->message[i];
+    }
+    debug_stream_0.timestamp = std::chrono::steady_clock::now();beat = false;
     bool mux_heartbeat = false;
     bool cli_heartbeat = false;
     bool ctrl_heartbeat = false;
@@ -176,7 +192,20 @@ private:
     DVL_Data velocity;
     DVL_Data position;
     DVL_Data orientation;
-    Debug_Message debug;
+
+    Debug_Flag_Msg debug_flag_0;
+    Debug_Flag_Msg debug_flag_1;
+    Debug_Flag_Msg debug_flag_2;
+    
+    Debug_State_Data debug_position;
+    Debug_State_Data debug_orientation;
+    Debug_State_Data debug_angle_rate;
+    Debug_State_Data debug_angle_velocity;
+
+    Debug_State_Data debug_position_setpt;
+    Debug_State_Data debug_orientation_setpt;
+    Debug_State_Data debug_angle_rate_setpt;
+    Debug_State_Data debug_angle_velocity_setpt;
     Mission_Status status;
 
     rclcpp::Client<custom_interfaces::srv::ControlMode>::SharedPtr mux_client;

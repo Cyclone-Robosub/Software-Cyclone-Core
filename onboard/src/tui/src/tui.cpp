@@ -1,4 +1,4 @@
-#include "tui.hpp"
+#include "tui.hpp" 
 
 using namespace std::chrono_literals;
 
@@ -36,12 +36,23 @@ Dashboard::Dashboard(std::unique_ptr<TUI_Interface> tui) : Node("tui"), tui(std:
         std::bind(&Dashboard::dvl_drr_callback, this, std::placeholders::_1));
     mission_status_subscription = this->create_subscription<custom_interfaces::msg::MissionStatus>("mission_status", 10,
         std::bind(&Dashboard::mission_status_received_callback, this, std::placeholders::_1));
-    matlab_debug_subscription = this->create_subscription<custom_interfaces::msg::Debug>("matlab_debug", 10,
-        std::bind(&Dashboard::matlab_debug_received_callback, this, std::placeholders::_1));
     current_control_mode_subscription = this->create_subscription<std_msgs::msg::UInt8>("current_mode", 10, 
         std::bind(&Dashboard::control_mode_callback, this, std::placeholders::_1));
     ready_status_subscription = this->create_subscription<std_msgs::msg::Bool>("current_ready_state", 10, 
         std::bind(&Dashboard::ready_status_callback, this, std::placeholders::_1));
+
+    // matlab debug
+    matlab_debug_flag_0_subscription = this->create_subscription<custom_interfaces::msg::DebugFlag>("matlab_debug_flag_0", 10,
+        std::bind(&Dashboard::matlab_debug_f0_received_callback, this, std::placeholders::_1));
+    matlab_debug_flag_1_subscription = this->create_subscription<custom_interfaces::msg::DebugFlag>("matlab_debug_flag_1", 10,
+        std::bind(&Dashboard::matlab_debug_f1_received_callback, this, std::placeholders::_1));
+    matlab_debug_flag_2_subscription = this->create_subscription<custom_interfaces::msg::DebugFlag>("matlab_debug_flag_2", 10,
+        std::bind(&Dashboard::matlab_debug_f2_received_callback, this, std::placeholders::_1));
+    matlab_debug_actual_pt_subscription = this->create_subscription<custom_interfaces::msg::DebugState>("matlab_debug_actual_pt", 10,
+        std::bind(&Dashboard::matlab_debug_actual_pt_received_callback, this, std::placeholders::_1));
+    matlab_debug_set_pt_subscription = this->create_subscription<custom_interfaces::msg::DebugState>("matlab_debug_set_pt", 10,
+        std::bind(&Dashboard::matlab_debug_set_pt_received_callback, this, std::placeholders::_1));
+        
     go_signal_publisher = this->create_publisher<std_msgs::msg::Bool>("go_signal", 10);
     matlab_pos_reset_publisher = this->create_publisher<std_msgs::msg::Bool>("matlab_pos_reset", 10);
 
@@ -186,11 +197,72 @@ void Dashboard::dvl_drr_callback(custom_interfaces::msg::DRR::UniquePtr drr) {
     orientation.timestamp = std::chrono::steady_clock::now();
 }
 
-void Dashboard::matlab_debug_received_callback(custom_interfaces::msg::Debug::UniquePtr message) {
-    for (int i = 0; i < 256; i ++) { // 256 = ROS message length. One less than Debug C++ struct length.
-        debug.message[i] = message->message[i];
+void Dashboard::matlab_debug_f0_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr msg) {
+    for (int i = 0; i < 16; i ++) { 
+        debug_flag_0.name[i] = msg->name[i];
     }
-    debug.timestamp = std::chrono::steady_clock::now();
+    debug_flag_0.value = msg->value;
+    debug_flag_0.timestamp = std::chrono::steady_clock::now();
+}
+
+void Dashboard::matlab_debug_f1_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr msg) {
+    for (int i = 0; i < 16; i ++) { 
+        debug_flag_1.name[i] = msg->name[i];
+    }
+    debug_flag_1.value = msg->value;
+    debug_flag_1.timestamp = std::chrono::steady_clock::now();
+}
+
+void Dashboard::matlab_debug_f2_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr msg) {
+    for (int i = 0; i < 16; i ++) { 
+        debug_flag_2.name[i] = msg->name[i];
+    }
+    debug_flag_2.value = msg->value;
+    debug_flag_2.timestamp = std::chrono::steady_clock::now();
+}
+
+void Dashboard::matlab_debug_actual_pt_received_callback(custom_interfaces::msg::DebugState::UniquePtr msg) {
+    debug_position.x = msg->position.x;
+    debug_position.y = msg->position.y;
+    debug_position.z = msg->position.z;
+    debug_position.timestamp = std::chrono::steady_clock::now();
+
+    debug_orientation.roll = msg->angle.x; // roll
+    debug_orientation.pitch = msg->angle.y; // pitch
+    debug_orientation.yaw = msg->angle.z; // yaw
+    debug_orientation.timestamp = std::chrono::steady_clock::now();
+
+    debug_angle_rate.vx = msg->angle_rate.x;
+    debug_angle_rate.vy = msg->angle_rate.y;
+    debug_angle_rate.vz = msg->angle_rate.z;
+    debug_angle_rate.timestamp = std::chrono::steady_clock::now();
+
+    debug_angle_velocity.p = msg->angle_velocity.x; // p
+    debug_angle_velocity.q = msg->angle_velocity.y; // q
+    debug_angle_velocity.r = msg->angle_velocity.z; // r
+    debug_angle_rate.timestamp = std::chrono::steady_clock::now(); 
+}
+
+void Dashboard::matlab_debug_set_pt_callback(custom_interfaces::msg::DebugState::UniquePtr message) {
+    debug_position_setpt.x = msg->position.x;
+    debug_position_setpt.y = msg->position.y;
+    debug_position_setpt.z = msg->position.z;
+    debug_position_setpt.timestamp = std::chrono::steady_clock::now();
+
+    debug_orientation_setpt.roll = msg->angle.x; // roll
+    debug_orientation_setpt.pitch = msg->angle.y; // pitch
+    debug_orientation_setpt.yaw = msg->angle.z; // yaw
+    debug_orientation_setpt.timestamp = std::chrono::steady_clock::now();
+
+    debug_angle_rate_setpt.vx = msg->angle_rate.x;
+    debug_angle_rate_setpt.vy = msg->angle_rate.y;
+    debug_angle_rate_setpt.vz = msg->angle_rate.z;
+    debug_angle_rate_setpt.timestamp = std::chrono::steady_clock::now();
+
+    debug_angle_velocity_setpt.p = msg->angle_velocity.x; // p
+    debug_angle_velocity_setpt.q = msg->angle_velocity.y; // q
+    debug_angle_velocity_setpt.r = msg->angle_velocity.z; // r
+    debug_angle_rate_setpt.timestamp = std::chrono::steady_clock::now();
 }
 
 void Dashboard::mission_status_received_callback(custom_interfaces::msg::MissionStatus::UniquePtr status_msg) {
@@ -406,8 +478,6 @@ void Dashboard_TUI::refresh_display(int numArgs, ...) {
     display_tui(args);
     display_mutex.unlock();
 }
-
-
 
 void Dashboard_TUI::jump_to_column(int col_number) {
     std::string column_string = "\x1B[" + std::to_string(col_number) + "G";
@@ -792,7 +862,21 @@ void Dashboard_TUI::display_tui(va_list args) {
     DVL_Data position = va_arg(args, DVL_Data);
     DVL_Data orientation = va_arg(args, DVL_Data);
     Mission_Status status = va_arg(args, Mission_Status);
-    Debug_Message debug = va_arg(args, Debug_Message);
+
+    Debug_Flag_Msg debug_flag_0 = va_arg(args, Debug_Flag_Msg);
+    Debug_Flag_Msg debug_flag_1 = va_arg(args, Debug_Flag_Msg);
+    Debug_Flag_Msg debug_flag_2 = va_arg(args, Debug_Flag_Msg);
+
+    Debug_State_Data debug_position = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_orientation = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_angle_rate = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_angle_velocity = va_arg(args, Debug_State_Data);
+
+    Debug_State_Data debug_position_setpt = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_orientation_setpt = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_angle_rate_setpt = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_angle_velocity_setpt = va_arg(args, Debug_State_Data);
+
     bool ping_ok = (bool)va_arg(args, int);
     double ping_rtt = va_arg(args, double);
     double seconds_since_ping = va_arg(args, double);
@@ -862,7 +946,7 @@ void Dashboard_TUI::display_tui(va_list args) {
     printf("\n");
 
     write_header("Matlab Debug", col_3);
-    display_debug(col_3, debug);
+    // display_debug(col_3, debug_stream_0, debug_stream_1, debug_stream_2, debug_float_0, debug_float_1, debug_int_0, debug_int_1);
 
     write(STDOUT_FILENO, "\x1B[38;29H", 8); // jumpt to prompt (line/column)
     write(STDOUT_FILENO, "\x1B[?25h", 6); // visible cursor
