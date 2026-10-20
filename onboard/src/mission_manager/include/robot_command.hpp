@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <chrono>
+#include <optional>
 
 #include "custom_interfaces/msg/command.hpp"
 #include "custom_interfaces/msg/pose6_d.hpp"
@@ -53,7 +54,7 @@ public:
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         double hold_time,
         double timeout,
-        std::array<uint8_t,16> trick_id = {'\0'}
+        std::optional<std::array<uint8_t,16>> trick_id
     );
     DriveToWorldWaypoint(
         std::string name,
@@ -64,7 +65,7 @@ public:
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         double hold_time,
         double timeout,
-        std::array<uint8_t,16> trick_id = {'\0'}
+        std::optional<std::array<uint8_t,16>> trick_id
     );
 
 protected:
@@ -85,7 +86,7 @@ public:
         std::array<uint8_t,16> object_id,
         double confidence_required,
         double timeout,
-        std::array<uint8_t,16> trick_id = {'\0'}
+        std::optional<std::array<uint8_t,16>> trick_id
     );
     DriveToWorldWaypointSeeking(
         std::string name,
@@ -96,7 +97,7 @@ public:
         std::array<uint8_t,16> object_id,
         double confidence_required,
         double timeout,
-        std::array<uint8_t,16> trick_id = {'\0'}
+        std::optional<std::array<uint8_t,16>> trick_id
     );
 
 protected:
@@ -132,7 +133,7 @@ public:
         std::array<uint8_t,16> object_id,
         double hold_time,
         double timeout,
-        std::array<uint8_t,16> trick_id = {'\0'}
+        std::optional<std::array<uint8_t,16>> trick_id
     );
     TrackObjectWaypoint(
         std::string name,
@@ -144,7 +145,7 @@ public:
         std::array<uint8_t,16> object_id,
         double hold_time,
         double timeout,
-        std::array<uint8_t,16> trick_id = {'\0'}
+        std::optional<std::array<uint8_t,16>> trick_id
     );
 
 protected:

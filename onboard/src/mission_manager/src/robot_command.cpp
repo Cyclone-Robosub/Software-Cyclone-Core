@@ -98,14 +98,15 @@ DriveToWorldWaypoint::DriveToWorldWaypoint(
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         double hold_time,
         double timeout,
-        std::array<uint8_t,16> trick_id
+        std::optional<std::array<uint8_t,16>> trick_id
     ) :
     Command(name, timeout),
     goal_waypoint(std::move(goal_waypoint)),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
     hold_time(hold_time),
-    trick_id(trick_id) {
+    trick_id(trick_id.value_or(std::array<uint8_t,16>{'0'}))
+    {
         // intentionally blank
 };
 
@@ -118,14 +119,14 @@ DriveToWorldWaypoint::DriveToWorldWaypoint(
         std::unique_ptr<custom_interfaces::msg::Tolerance6D> tolerance,
         double hold_time,
         double timeout,
-        std::array<uint8_t,16> trick_id
+        std::optional<std::array<uint8_t,16>> trick_id
     ) :
     Command(name, next, failure, timeout),
     goal_waypoint(std::move(goal_waypoint)),
     waypoint_mask(std::move(waypoint_mask)),
     tolerance(std::move(tolerance)),
     hold_time(hold_time),
-    trick_id(trick_id) {
+    trick_id(trick_id.value_or(std::array<uint8_t,16>{'0'})) {
         // intentionally blank
 }
 
@@ -147,14 +148,14 @@ DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
         std::array<uint8_t,16> object_id,
         double confidence_required,
         double timeout,
-        std::array<uint8_t,16> trick_id
+        std::optional<std::array<uint8_t,16>> trick_id
     ) :
     Command(name, timeout),
     goal_waypoint(std::move(goal_waypoint)),
     waypoint_mask(std::move(waypoint_mask)),
     object_id(object_id),
     confidence_required(confidence_required),
-    trick_id(trick_id) {
+    trick_id(trick_id.value_or(std::array<uint8_t,16>{'0'})) {
         // intentionally blank
 }
 
@@ -167,14 +168,14 @@ DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
         std::array<uint8_t,16> object_id,
         double confidence_required,
         double timeout,
-        std::array<uint8_t,16> trick_id
+        std::optional<std::array<uint8_t,16>> trick_id
     ) :
     Command(name, next, failure, timeout),
     goal_waypoint(std::move(goal_waypoint)),
     waypoint_mask(std::move(waypoint_mask)),
     object_id(object_id),
     confidence_required(confidence_required),
-    trick_id(trick_id) {
+    trick_id(trick_id.value_or(std::array<uint8_t,16>{'0'})) {
         // intentionally blank
 }
 
@@ -231,7 +232,7 @@ TrackObjectWaypoint::TrackObjectWaypoint(
         std::array<uint8_t,16> object_id,
         double hold_time,
         double timeout,
-        std::array<uint8_t,16> trick_id
+        std::optional<std::array<uint8_t,16>> trick_id
     ) :
     Command(name, timeout),
     tracking_position(std::move(tracking_position)),
@@ -239,7 +240,7 @@ TrackObjectWaypoint::TrackObjectWaypoint(
     tolerance(std::move(tolerance)),
     object_id(object_id),
     hold_time(hold_time),
-    trick_id(trick_id) {
+    trick_id(trick_id.value_or(std::array<uint8_t,16>{'0'})) {
         // intentionally blank
 }
 
@@ -253,7 +254,7 @@ TrackObjectWaypoint::TrackObjectWaypoint(
         std::array<uint8_t,16> object_id,
         double hold_time,
         double timeout,
-        std::array<uint8_t,16> trick_id
+        std::optional<std::array<uint8_t,16>> trick_id
     ) :
     Command(name, next, failure, timeout),
     tracking_position(std::move(tracking_position)),
@@ -261,7 +262,7 @@ TrackObjectWaypoint::TrackObjectWaypoint(
     tolerance(std::move(tolerance)),
     object_id(object_id),
     hold_time(hold_time),
-    trick_id(trick_id) {
+    trick_id(trick_id.value_or(std::array<uint8_t,16>{'0'})) {
         // intentionally blank
 }
 
