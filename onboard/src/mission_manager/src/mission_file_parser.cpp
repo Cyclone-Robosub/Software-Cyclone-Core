@@ -32,7 +32,6 @@ void MissionFileParser::parse_mission_list_file(std::string file_name) {
     auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
     if (!file.good()) {
         fprintf(stderr, "Mission list '%s' not recognized!\n", file_name.c_str());
-        return;
         throw std::invalid_argument("Mission list not recognized");
     }
     std::string mission_file;
@@ -44,10 +43,6 @@ void MissionFileParser::parse_mission_list_file(std::string file_name) {
 
 void MissionFileParser::parse_always_run_file() {
     parse_mission_list_file("always_run.txt");
-}
-
-void MissionFileParser::parse_new_files() {
-        parse_files(files_not_yet_parsed);
 }
 
 void MissionFileParser::parse_all_files() {
@@ -113,15 +108,14 @@ void MissionFileParser::print_mission_tree(std::shared_ptr<Command> tree, uint8_
 
 // TODO: add trick id if it exists
 // TODO: handle bad parsing (maybe catch exception, report, abort)
-void MissionFileParser::parse_files(std::queue<std::string> files) {
+void MissionFileParser::parse_new_files() {
     std::string file_name;
-    while (!files.empty()) {
-        file_name = files.front();
+    while (!files_not_yet_parsed.empty()) {
+        file_name = files_not_yet_parsed.front();
         // TODO: more robust path handling
         auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
         if (!file.good()) {
             fprintf(stderr, "Mission file '%s' not recognized!\n", file_name.c_str());
-            continue;
             throw std::invalid_argument("Mission file not recognized");
         }
         try {
