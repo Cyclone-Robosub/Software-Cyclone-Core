@@ -2,6 +2,8 @@
 #define MISSION_FILE_PARSER_HPP
 
 #include <robot_command.hpp>
+#include <queue>
+#include <exception>
 
 #include "json.hpp"
 
@@ -34,7 +36,7 @@ public:
     std::shared_ptr<Root> get_next_mission();
     void print_mission_tree_at_index(uint8_t mission_index);
 private:
-    void parse_files(std::vector<std::string> files);
+    void parse_files(std::queue<std::string> files);
     void print_mission_tree(std::shared_ptr<Command> tree, uint8_t num_spaces);
     std::unique_ptr<custom_interfaces::msg::Pose6D> make_waypoint(json parameters_field);
     std::unique_ptr<custom_interfaces::msg::Pose6DMask> make_waypoint_mask(json parameters_field);
@@ -42,8 +44,8 @@ private:
     std::array<uint8_t,16> string_to_array(std::string string);
     std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> parse_tree(json tree, std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> registry);
 
-    std::vector<std::string> files_to_parse;
-    std::vector<std::string> files_not_yet_parsed;
+    std::queue<std::string> files_to_parse;
+    std::queue<std::string> files_not_yet_parsed;
     std::vector<Mission> parsed_missions;
     uint8_t next_mission_index;
 };

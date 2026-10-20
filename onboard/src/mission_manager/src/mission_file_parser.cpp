@@ -23,8 +23,8 @@ MissionFileParser::MissionFileParser() {
 }
 
 void MissionFileParser::add_file_to_parse(std::string file_name) {
-    files_not_yet_parsed.push_back(file_name);
-    files_to_parse.push_back(file_name);
+    files_not_yet_parsed.push(file_name);
+    files_to_parse.push(file_name);
 }
 
 void MissionFileParser::parse_mission_list_file(std::string file_name) {
@@ -47,14 +47,13 @@ void MissionFileParser::parse_always_run_file() {
 }
 
 void MissionFileParser::parse_new_files() {
-    parse_files(files_not_yet_parsed);
-    files_not_yet_parsed.clear();
+        parse_files(files_not_yet_parsed);
 }
 
 void MissionFileParser::parse_all_files() {
     parsed_missions.clear();
-    parse_files(files_to_parse);
-    files_not_yet_parsed.clear();
+    files_not_yet_parsed = files_to_parse;
+    parse_new_files();
 }
 
 void MissionFileParser::reset_to_first_mission() {
@@ -114,8 +113,10 @@ void MissionFileParser::print_mission_tree(std::shared_ptr<Command> tree, uint8_
 
 // TODO: add trick id if it exists
 // TODO: handle bad parsing (maybe catch exception, report, abort)
-void MissionFileParser::parse_files(std::vector<std::string> files) {
-    for (std::string file_name : files) {
+void MissionFileParser::parse_files(std::queue<std::string> files) {
+    std::string file_name;
+    while (!files.empty()) {
+        file_name = files.front();
         // TODO: more robust path handling
         auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
         if (!file.good()) {
@@ -123,82 +124,88 @@ void MissionFileParser::parse_files(std::vector<std::string> files) {
             continue;
             throw std::invalid_argument("Mission file not recognized");
         }
-        json mission_file_data = json::parse(file);
+        try {
+            json mission_file_data = json::parse(file);
 
-        auto command_registry = std::map<std::string,std::pair<bool,std::shared_ptr<Command>>>();
+            auto command_registry = std::map<std::string,std::pair<bool,std::shared_ptr<Command>>>();
 
-        for (auto command : mission_file_data["commands"]) {
-            std::string reference = command["reference"];
-            std::string action = command["action"];
-            json parameters = command["parameters"];
-            std::shared_ptr<Command> command_entry = nullptr;
+            for (auto command : mission_file_data["commands"]) {
+                std::string reference = command["reference"];
+                std::string action = command["action"];
+                json parameters = command["parameters"];
+                std::shared_ptr<Command> command_entry = nullptr;
 
-            if (action == "drive_to_world_waypoint") {
-                command_entry = std::make_shared<DriveToWorldWaypoint>(
-                    reference,
-                    make_waypoint(parameters["goal_waypoint"]),
-                    make_waypoint_mask(parameters["waypoint_mask"]),
-                    make_tolerance(parameters["tolerance"]),
-                    parameters["hold_time"],
-                    parameters["timeout"]
-                );
-            } else if (action == "drive_to_world_waypoint_seeking") {
-                command_entry = std::make_shared<DriveToWorldWaypointSeeking>(
-                    reference,
-                    make_waypoint(parameters["goal_waypoint"]),
-                    make_waypoint_mask(parameters["waypoint_mask"]),
-                    string_to_array(parameters["object_id"]),
-                    parameters["confidence_required"],
-                    parameters["timeout"]
-                );
-            } else if (action == "idle") {
-                command_entry = std::make_shared<Idle>(
-                    reference,
-                    parameters["duration"]
-                );
-            } else if (action == "track_object_waypoint") {
-                command_entry = std::make_shared<TrackObjectWaypoint>(
-                    reference,
-                    make_waypoint(parameters["tracking_position"]),
-                    make_waypoint_mask(parameters["waypoint_mask"]),
-                    make_tolerance(parameters["tolerance"]),
-                    string_to_array(parameters["object_id"]),
-                    parameters["hold_time"],
-                    parameters["timeout"]
-                );
-            } else if (action == "duration_trick") {
-                command_entry = std::make_shared<DurationTrick>(
-                    reference,
-                    make_waypoint_mask(parameters["waypoint_mask"]),
-                    make_tolerance(parameters["tolerance"]),
-                    string_to_array(parameters["trick_id"]),
-                    parameters["hold_time"],
-                    parameters["duration"],
-                    parameters["timeout"]
-                );
-            } else if (action == "distance_trick") {
-                command_entry = std::make_shared<DistanceTrick>(
-                    reference,
-                    make_waypoint(parameters["destination_position"]),
-                    make_waypoint_mask(parameters["waypoint_mask"]),
-                    make_tolerance(parameters["tolerance"]),
-                    string_to_array(parameters["trick_id"]),
-                    parameters["hold_time"],
-                    parameters["timeout"]
-                );
-            } else {
-                // TODO: throw an exception here or something?
-                fprintf(stderr, "Unknown command type!\n");
-                continue;
+                if (action == "drive_to_world_waypoint") {
+                    command_entry = std::make_shared<DriveToWorldWaypoint>(
+                        reference,
+                        make_waypoint(parameters["goal_waypoint"]),
+                        make_waypoint_mask(parameters["waypoint_mask"]),
+                        make_tolerance(parameters["tolerance"]),
+                        parameters["hold_time"],
+                        parameters["timeout"]
+                    );
+                } else if (action == "drive_to_world_waypoint_seeking") {
+                    command_entry = std::make_shared<DriveToWorldWaypointSeeking>(
+                        reference,
+                        make_waypoint(parameters["goal_waypoint"]),
+                        make_waypoint_mask(parameters["waypoint_mask"]),
+                        string_to_array(parameters["object_id"]),
+                        parameters["confidence_required"],
+                        parameters["timeout"]
+                    );
+                } else if (action == "idle") {
+                    command_entry = std::make_shared<Idle>(
+                        reference,
+                        parameters["duration"]
+                    );
+                } else if (action == "track_object_waypoint") {
+                    command_entry = std::make_shared<TrackObjectWaypoint>(
+                        reference,
+                        make_waypoint(parameters["tracking_position"]),
+                        make_waypoint_mask(parameters["waypoint_mask"]),
+                        make_tolerance(parameters["tolerance"]),
+                        string_to_array(parameters["object_id"]),
+                        parameters["hold_time"],
+                        parameters["timeout"]
+                    );
+                } else if (action == "duration_trick") {
+                    command_entry = std::make_shared<DurationTrick>(
+                        reference,
+                        make_waypoint_mask(parameters["waypoint_mask"]),
+                        make_tolerance(parameters["tolerance"]),
+                        string_to_array(parameters["trick_id"]),
+                        parameters["hold_time"],
+                        parameters["duration"],
+                        parameters["timeout"]
+                    );
+                } else if (action == "distance_trick") {
+                    command_entry = std::make_shared<DistanceTrick>(
+                        reference,
+                        make_waypoint(parameters["destination_position"]),
+                        make_waypoint_mask(parameters["waypoint_mask"]),
+                        make_tolerance(parameters["tolerance"]),
+                        string_to_array(parameters["trick_id"]),
+                        parameters["hold_time"],
+                        parameters["timeout"]
+                    );
+                } else {
+                    // TODO: throw an exception here or something?
+                    fprintf(stderr, "Unknown command type!\n");
+                    continue;
+                }
+
+                command_registry[reference] = {false, command_entry};
             }
-            
-            command_registry[reference] = {false, command_entry};
+            json tree = mission_file_data["tree"];
+            command_registry = parse_tree(tree, command_registry);
+            auto root = std::make_shared<Root>();
+            root->set_next(command_registry[tree["ref"]].second);
+            parsed_missions.push_back(Mission(root,file_name));
+            files_not_yet_parsed.pop();
+        } catch (const std::exception& e) {
+            // Temporary exception type, replace with custom exception
+            throw std::logic_error("Failed to parse mission file " + file_name + ": " + e.what());
         }
-        json tree = mission_file_data["tree"];
-        command_registry = parse_tree(tree, command_registry);
-        auto root = std::make_shared<Root>();
-        root->set_next(command_registry[tree["ref"]].second);
-        parsed_missions.push_back(Mission(root,file_name));
     }
 }
 

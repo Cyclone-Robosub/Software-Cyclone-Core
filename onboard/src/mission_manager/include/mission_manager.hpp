@@ -11,6 +11,7 @@
 #include "robot_command.hpp"
 #include "mission_file_parser.hpp"
 #include <mutex>
+#include <exception>
 
 class MissionManager : public rclcpp::Node {
 public:

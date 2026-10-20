@@ -4,7 +4,7 @@
 #include "mission_manager.hpp"
 #include "mission_file_parser.hpp"
 
-class TestSubscriber : public ::testing::Test {
+class TestMissionManager : public ::testing::Test {
 protected:
     std::shared_ptr<MissionManager> node;
 
@@ -23,7 +23,26 @@ protected:
     }
 };
 
-TEST_F(TestSubscriber, NodeConstruction) {
+class TestParser : public ::testing::Test {
+protected:
+    std::shared_ptr<MissionFileParser> parser;
+
+    void SetUp() override {
+        if (!rclcpp::ok()) {
+            rclcpp::init(0, nullptr);
+        }
+    }
+
+    void TearDown() override {
+        parser.reset();
+    }
+
+    void create_parser() {
+        parser = std::make_shared<MissionFileParser>();
+    }
+};
+
+TEST_F(TestMissionManager, NodeConstruction) {
     ASSERT_NO_THROW({
         create_node();
     });
@@ -33,15 +52,15 @@ TEST_F(TestSubscriber, NodeConstruction) {
 }
 
 // When more robust pathing exists, should use a seperate test_mission_files folder
-TEST_F(TestSubscriber, MissionList) {
-    create_node();
-    // node->parse_mission_list_file("test_file.txt");
-    // node->parse_new_files();
+TEST_F(TestParser, MissionList) {
+    // create_parser();
+    // parser->parse_mission_list_file("test_file.txt");
+    // parser->parse_new_files();
 
     // // Add checking for proper error thrown from always_run.txt and garbage_file
-    // EXPECT_EQ(node->get_current_mission_name(), "sample_mission_file.json");
-    // node->jump_to_mission(1);
-    // EXPECT_EQ(node->get_current_mission_name(), "sample_mission_file_2.json");
+    // EXPECT_EQ(parser->get_current_mission_name(), "sample_mission_file.json");
+    // parser->jump_to_mission(1);
+    // EXPECT_EQ(parser->get_current_mission_name(), "sample_mission_file_2.json");
 }
 
 #ifdef ENABLE_TESTING
