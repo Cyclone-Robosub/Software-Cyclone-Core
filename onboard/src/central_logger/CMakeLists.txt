@@ -19,6 +19,7 @@ include_directories(
 
 # Main executable (without ENABLE_TESTING defined)
 add_executable(central_logger src/central_logger.cpp)
+target_compile_features(central_logger PUBLIC cxx_std_17)
 ament_target_dependencies(central_logger
   rclcpp
   custom_interfaces
@@ -35,6 +36,7 @@ if(BUILD_TESTING)
   
   # Create a library from the source for testing (WITH ENABLE_TESTING defined)
   add_library(${PROJECT_NAME}_lib src/central_logger.cpp)
+  target_compile_features(${PROJECT_NAME}_lib PUBLIC cxx_std_17)
   target_compile_definitions(${PROJECT_NAME}_lib PUBLIC ENABLE_TESTING)
   ament_target_dependencies(${PROJECT_NAME}_lib
     rclcpp
