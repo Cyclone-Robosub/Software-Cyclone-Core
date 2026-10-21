@@ -35,7 +35,7 @@ public:
     bool jump_to_mission(uint8_t mission_index);
     std::shared_ptr<Root> get_next_mission();
     void print_mission_tree_at_index(uint8_t mission_index);
-private:
+protected:
     void print_mission_tree(std::shared_ptr<Command> tree, uint8_t num_spaces);
     std::unique_ptr<custom_interfaces::msg::Pose6D> make_waypoint(json parameters_field);
     std::unique_ptr<custom_interfaces::msg::Pose6DMask> make_waypoint_mask(json parameters_field);
