@@ -82,6 +82,7 @@ void MissionManager::run_mission() {
             if (cancel_mission) {
                 auto idle_command_msg = std::make_shared<Idle>("cancel", -1)->get_ros2_message();
                 command_publisher->publish(*idle_command_msg);
+                cancel_mission = false;
                 return;
             }
             usleep(100); // Prevent hogging CPU. Probably a better solution exists. Maybe sleep this thread?
