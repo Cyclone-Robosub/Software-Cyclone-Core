@@ -7,11 +7,15 @@ using namespace rclcpp;
 
 Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd, 
                          std::unique_ptr<FD_Interface> vr_fd,
-                         std::unique_ptr<FD_Interface> imu_fd) : 
+                         std::unique_ptr<FD_Interface> imu_fd,
+                         std::unique_ptr<FD_Interface> pwm_fd,
+                         std::unique_ptr<FD_Interface> events_fd) : 
     Node("data_logger"),
     drr_fd(std::move(drr_fd)),
     vr_fd(std::move(vr_fd)),
-    imu_fd(std::move(imu_fd)) 
+    imu_fd(std::move(imu_fd)),
+    pwm_fd(std::move(pwm_fd)),
+    events_fd(std::move(events_fd))
      {
     drr_subscription = this->create_subscription<custom_interfaces::msg::DRR>(
         "dead_reck_report", 10, 
@@ -22,18 +26,30 @@ Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
     imu_subscription = this->create_subscription<custom_interfaces::msg::Imu>(
         "imu_custom", 10,
         std::bind(&Data_Logger::imu_data_received_callback, this, std::placeholders::_1));
-    // TODO: PWMs, go switch activations, any additional sensors added in the future, manipulator/dropper commands, improved timestamp granularity (should match imu)
+    pwm_subscription = this->create_subscription<custom_interfaces::msg::Pwms>(
+        "pwm_cmd", 10,
+        std::bind(&Data_Logger::pwm_data_received_callback, this, std::placeholders::_1)
+    );
+    go_signal_subscription = this->create_subscription<std_msgs::msg::Bool>(
+        "go_signal", 10,
+        std::bind(&Data_Logger::go_signal_received_callback, this, std::placeholders::_1)
+    );
+    // TODO: any additional sensors added in the future, manipulator/dropper commands
     
     std::string drr_header = "time,position_x,position_y,position_z,angle_x,angle_y,angle_z,pos_std\n";
     std::string vr_header = "time,velocity_x,velocity_y,velocity_z,altitude,fom,covariance_1_1,covariance_1_2,covariance_1_3,covariance_2_1,covariance_2_2,covariance_2_3,covariance_3_1,covariance_3_2,covariance_3_3\n";
     std::string imu_header = "time,orientation_x,orientation_y,orientation_z,orientation_w,orientation_covariance_c11,orientation_covariance_c12,orientation_covariance_c13,orientation_covariance_c21,orientation_covariance_c22,orientation_covariance_c23,orientation_covariance_c31,orientation_covariance_c32,orientation_covariance_c33,angular_velocity_x,angular_velocity_y,angular_velocity_z,angular_velocity_covariance_c11,angular_velocity_covariance_c12,angular_velocity_covariance_c13,angular_velocity_covariance_c21,angular_velocity_covariance_c22,angular_velocity_covariance_c23,angular_velocity_covariance_c31,angular_velocity_covariance_c32,angular_velocity_covariance_c33,linear_acceleration_x,linear_acceleration_y,linear_acceleration_z,linear_acceleration_covariance_c11,linear_acceleration_covariance_c12,linear_acceleration_covariance_c13,linear_acceleration_covariance_c21,linear_acceleration_covariance_c22,linear_acceleration_covariance_c23,linear_acceleration_covariance_c31,linear_acceleration_covariance_c32,linear_acceleration_covariance_c33,magnetic_field_x,magnetic_field_y,magnetic_field_z,magnetic_field_covariance_c11,magnetic_field_covariance_c12,magnetic_field_covariance_c13,magnetic_field_covariance_c21,magnetic_field_covariance_c22,magnetic_field_covariance_c23,magnetic_field_covariance_c31,magnetic_field_covariance_c32,magnetic_field_covariance_c33,fluid_pressure,fluid_pressure_variance,pose_position_x,pose_position_y,pose_position_z,pose_orientation_x,pose_orientation_y,pose_orientation_z,pose_orientation_w,pose_covariance_c11,pose_covariance_c12,pose_covariance_c13,pose_covariance_c14,pose_covariance_c15,pose_covariance_c16,pose_covariance_c21,pose_covariance_c22,pose_covariance_c23,pose_covariance_c24,pose_covariance_c25,pose_covariance_c26,pose_covariance_c31,pose_covariance_c32,pose_covariance_c33,pose_covariance_c34,pose_covariance_c35,pose_covariance_c36,pose_covariance_c41,pose_covariance_c42,pose_covariance_c43,pose_covariance_c44,pose_covariance_c45,pose_covariance_c46,pose_covariance_c51,pose_covariance_c52,pose_covariance_c53,pose_covariance_c54,pose_covariance_c55,pose_covariance_c56,pose_covariance_c61,pose_covariance_c62,pose_covariance_c63,pose_covariance_c64,pose_covariance_c65,pose_covariance_c66,twist_linear_x,twist_linear_y,twist_linear_z,twist_angular_x,twist_angular_y,twist_angular_z,twist_covariance_c11,twist_covariance_c12,twist_covariance_c13,twist_covariance_c14,twist_covariance_c15,twist_covariance_c16,twist_covariance_c21,twist_covariance_c22,twist_covariance_c23,twist_covariance_c24,twist_covariance_c25,twist_covariance_c26,twist_covariance_c31,twist_covariance_c32,twist_covariance_c33,twist_covariance_c34,twist_covariance_c35,twist_covariance_c36,twist_covariance_c41,twist_covariance_c42,twist_covariance_c43,twist_covariance_c44,twist_covariance_c45,twist_covariance_c46,twist_covariance_c51,twist_covariance_c52,twist_covariance_c53,twist_covariance_c54,twist_covariance_c55,twist_covariance_c56,twist_covariance_c61,twist_covariance_c62,twist_covariance_c63,twist_covariance_c64,twist_covariance_c65,twist_covariance_c66,roll,pitch\n";
+    std::string pwm_header = "time,thruster_0,thruster_1,thruster_2,thruster_3,thruster_4,thruster_5,thruster_6,thruster_7\n";
+    std::string events_header = "time,event\n";
     write(this->drr_fd->get_write_fd(), drr_header.c_str(), drr_header.length());
     write(this->vr_fd->get_write_fd(), vr_header.c_str(), vr_header.length());
     write(this->imu_fd->get_write_fd(), imu_header.c_str(), imu_header.length());
+    write(this->pwm_fd->get_write_fd(), pwm_header.c_str(), pwm_header.length());
+    write(this->events_fd->get_write_fd(), events_header.c_str(), events_header.length());
 }
 
 void Data_Logger::dead_reck_report_received_callback(custom_interfaces::msg::DRR::UniquePtr drr_msg) {
-    std::string log_data = Data_Logger::get_current_time();    
+    std::string log_data = Data_Logger::get_current_time();
     log_data += "," + std::to_string(drr_msg->position.x);
     log_data += "," + std::to_string(drr_msg->position.y);
     log_data += "," + std::to_string(drr_msg->position.z);
@@ -169,6 +185,23 @@ void Data_Logger::imu_data_received_callback(custom_interfaces::msg::Imu::Unique
     write(this->imu_fd->get_write_fd(), log_data.c_str(), log_data.length());
 }
 
+void Data_Logger::pwm_data_received_callback(custom_interfaces::msg::Pwms::UniquePtr pwm_msg) {
+    std::string log_data = Data_Logger::get_current_time();
+    for (int i = 0; i < 8; i++) {
+        log_data += "," + std::to_string(pwm_msg->pwms[i]);
+    }
+    log_data += "\n";
+    write(this->pwm_fd->get_write_fd(), log_data.c_str(), log_data.length());
+}
+
+void Data_Logger::go_signal_received_callback(std_msgs::msg::Bool::UniquePtr go_signal_msg) {
+    (void)go_signal_msg; // stop compiler complaining
+    std::string log_data = Data_Logger::get_current_time();
+    log_data += ",go_signal";
+    log_data += "\n";
+    write(this->events_fd->get_write_fd(), log_data.c_str(), log_data.length());
+}
+
 std::string Data_Logger::get_current_time() {
     char buffer [80];
 
@@ -211,9 +244,16 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<FD_Interface> drr_fd = std::make_unique<Data_FD>(filepath + "-dvl-drr.csv");
     std::unique_ptr<FD_Interface> vr_fd = std::make_unique<Data_FD>(filepath + "-dvl-vr.csv");
     std::unique_ptr<FD_Interface> imu_fd = std::make_unique<Data_FD>(filepath + "-imu.csv");
+    std::unique_ptr<FD_Interface> pwm_fd = std::make_unique<Data_FD>(filepath + "-pwm.csv");
+    std::unique_ptr<FD_Interface> events_fd = std::make_unique<Data_FD>(filepath + "-events.csv");
 
     rclcpp::init(argc, argv);
-    auto data_logger = std::make_shared<Data_Logger>(std::move(drr_fd), std::move(vr_fd), std::move(imu_fd));
+    auto data_logger = std::make_shared<Data_Logger>(
+        std::move(drr_fd),
+        std::move(vr_fd),
+        std::move(imu_fd),
+        std::move(pwm_fd),
+        std::move(events_fd));
     rclcpp::spin(data_logger);
     
     rclcpp::shutdown();
