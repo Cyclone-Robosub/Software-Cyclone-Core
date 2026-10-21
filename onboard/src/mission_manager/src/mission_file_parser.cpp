@@ -106,6 +106,14 @@ void MissionFileParser::print_mission_tree(std::shared_ptr<Command> tree, uint8_
     }
 }
 
+void MissionFileParser::print_all_parsed_missions() {
+    auto files_to_parse_copy = files_to_parse;
+    while (!files_to_parse_copy.empty()) {
+        std::cout << files_to_parse.front() << "\n";
+        files_to_parse_copy.pop();
+    }
+}
+
 // TODO: add trick id if it exists
 // TODO: handle bad parsing (maybe catch exception, report, abort)
 void MissionFileParser::parse_new_files() {

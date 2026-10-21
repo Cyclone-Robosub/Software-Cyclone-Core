@@ -35,6 +35,7 @@ public:
     virtual bool jump_to_mission(uint8_t mission_index);
     virtual std::shared_ptr<Root> get_next_mission();
     virtual void print_mission_tree_at_index(uint8_t mission_index);
+    virtual void print_all_parsed_missions();
 protected:
     virtual void print_mission_tree(std::shared_ptr<Command> tree, uint8_t num_spaces);
     virtual std::unique_ptr<custom_interfaces::msg::Pose6D> make_waypoint(json parameters_field);
