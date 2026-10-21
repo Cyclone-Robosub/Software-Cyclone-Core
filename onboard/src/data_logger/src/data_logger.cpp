@@ -22,6 +22,7 @@ Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
     imu_subscription = this->create_subscription<custom_interfaces::msg::Imu>(
         "imu_custom", 10,
         std::bind(&Data_Logger::imu_data_received_callback, this, std::placeholders::_1));
+    // TODO: PWMs, go switch activations, any additional sensors added in the future, manipulator/dropper commands, improved timestamp granularity (should match imu)
     
     std::string drr_header = "time,position_x,position_y,position_z,angle_x,angle_y,angle_z,pos_std\n";
     std::string vr_header = "time,velocity_x,velocity_y,velocity_z,altitude,fom,covariance_1_1,covariance_1_2,covariance_1_3,covariance_2_1,covariance_2_2,covariance_2_3,covariance_3_1,covariance_3_2,covariance_3_3\n";
