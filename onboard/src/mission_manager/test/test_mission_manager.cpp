@@ -53,14 +53,17 @@ TEST_F(TestMissionManager, NodeConstruction) {
 
 // When more robust pathing exists, should use a seperate test_mission_files folder
 TEST_F(TestParser, MissionList) {
-    // create_parser();
-    // parser->parse_mission_list_file("test_file.txt");
-    // parser->parse_new_files();
+    create_parser();
+    try {
+        parser->parse_mission_list_file("test_file.txt");
+        parser->parse_new_files();
+    } catch (std::exception& e) {
+        FAIL();
+    }    
 
-    // // Add checking for proper error thrown from always_run.txt and garbage_file
-    // EXPECT_EQ(parser->get_current_mission_name(), "sample_mission_file.json");
-    // parser->jump_to_mission(1);
-    // EXPECT_EQ(parser->get_current_mission_name(), "sample_mission_file_2.json");
+    EXPECT_EQ(parser->get_current_mission_name(), "sample_mission_file.json");
+    parser->jump_to_mission(1);
+    EXPECT_EQ(parser->get_current_mission_name(), "sample_mission_file_2.json");
 }
 
 #ifdef ENABLE_TESTING

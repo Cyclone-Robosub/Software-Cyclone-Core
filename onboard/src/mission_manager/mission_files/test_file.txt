@@ -2,8 +2,4 @@
 
 sample_mission_file.json
 
-always_run.txt
-
 sample_mission_file_2.json
-
-garbage_file

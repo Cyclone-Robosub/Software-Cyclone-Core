@@ -14,7 +14,9 @@ MissionManager::MissionManager(std::unique_ptr<MissionFileParser> parser) :
     mission_running(false),
     cancel_mission(false),
     timed_out(false),
-    last_mission_status_update(std::chrono::steady_clock::now()) {
+    /* Behind by five seconds so that the timeout doesn't immediately take effect */
+    last_mission_status_update(std::chrono::steady_clock::now() - 5s),
+    last_go_switch_update(std::chrono::steady_clock::now() - 5s) {
         command_publisher = this->create_publisher<custom_interfaces::msg::Command>("current_command", 10);
         heartbeat_publisher = this->create_publisher<std_msgs::msg::Empty>("mission_manager_heartbeat", 10);
         current_ready_status_publisher = this->create_publisher<std_msgs::msg::Bool>("current_ready_state", 10);
@@ -82,6 +84,7 @@ void MissionManager::run_mission() {
             if (cancel_mission) {
                 auto idle_command_msg = std::make_shared<Idle>("cancel", -1)->get_ros2_message();
                 command_publisher->publish(*idle_command_msg);
+                cancel_mission = false;
                 return;
             }
             usleep(100); // Prevent hogging CPU. Probably a better solution exists. Maybe sleep this thread?
@@ -127,6 +130,14 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
      * could switch this to ::Empty or even to a trigger service. 
     */
     (void)signal; // stop compiler complaining
+
+    /* Quick and dirty debouncing TODO remove once debouncing implemented in microROS */
+    auto now = std::chrono::steady_clock::now();
+    if (now - last_go_switch_update < 2s) {
+        return;
+    }
+    last_go_switch_update = now;
+
     initiate_mission_mutex.lock();
     if (mission_running) {
         cancel_mission = true;
