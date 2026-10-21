@@ -73,6 +73,7 @@ private:
     volatile bool cancel_mission;
     volatile bool timed_out;
     std::chrono::time_point<std::chrono::steady_clock> last_mission_status_update;
+    std::chrono::time_point<std::chrono::steady_clock> last_go_switch_update;
 };
 
 #endif // MISSION_MANAGER_HPP
