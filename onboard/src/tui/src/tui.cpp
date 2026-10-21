@@ -34,6 +34,8 @@ Dashboard::Dashboard(std::unique_ptr<TUI_Interface> tui) : Node("tui"), tui(std:
         std::bind(&Dashboard::dvl_vr_callback, this, std::placeholders::_1));
     dvl_drr_subscription = this->create_subscription<custom_interfaces::msg::DRR>("dead_reck_report", 10, 
         std::bind(&Dashboard::dvl_drr_callback, this, std::placeholders::_1));
+    mission_status_subscription = this->create_subscription<custom_interfaces::msg::MissionStatus>("mission_status", 10,
+        std::bind(&Dashboard::mission_status_received_callback, this, std::placeholders::_1));
     matlab_debug_subscription = this->create_subscription<custom_interfaces::msg::Debug>("matlab_debug", 10,
         std::bind(&Dashboard::matlab_debug_received_callback, this, std::placeholders::_1));
     current_control_mode_subscription = this->create_subscription<std_msgs::msg::UInt8>("current_mode", 10, 
@@ -191,6 +193,17 @@ void Dashboard::matlab_debug_received_callback(custom_interfaces::msg::Debug::Un
     debug.timestamp = std::chrono::steady_clock::now();
 }
 
+void Dashboard::mission_status_received_callback(custom_interfaces::msg::MissionStatus::UniquePtr status_msg) {
+    for (int i = 0; i < 32; i ++) { // 32 = ROS message length. One less than MissionStatus C++ struct length.
+        status.current_command[i] = status_msg->current_command_name[i];
+        status.current_mission_file[i] = status_msg->current_mission_name[i];
+    }
+    status.duration_seconds = status_msg->seconds_total;
+    status.seconds_remaining = status_msg->seconds_remaining;
+    status.timestamp = std::chrono::steady_clock::now();
+}
+
+
 void Dashboard::control_mode_callback(std_msgs::msg::UInt8::UniquePtr msg) {
     current_control_mode = msg->data;
     refresh_display();
@@ -340,7 +353,7 @@ void Dashboard::work_loop() {
 void Dashboard::refresh_display() {
     auto now = std::chrono::steady_clock::now();
     seconds_since_ping = (double)((now - most_recent_ping) / 1ms) / (double)1000;
-    tui->refresh_display(21, current_control_mode,
+    tui->refresh_display(22, current_control_mode,
                              thrust_interface_heartbeat,
                              mux_heartbeat,
                              cli_heartbeat,
@@ -356,6 +369,7 @@ void Dashboard::refresh_display() {
                              velocity,
                              position,
                              orientation,
+                             status,
                              debug,
                              ping_ok,
                              rtt,
@@ -542,7 +556,7 @@ void Dashboard_TUI::display_connection_info(bool connection_ok, double seconds_s
     }
 }
 
-void Dashboard_TUI::printDVLCoordinate(double coordinate) {
+void Dashboard_TUI::printFloatingPoint(double coordinate) {
     if (fabs(coordinate) > 999) { // impossibly large number
         printf(" Overflow ");
     } else { // standard
@@ -555,11 +569,11 @@ void Dashboard_TUI::display_vr(const int col_number, DVL_Data velocity) {
     std::string fresh = dvl_fresh(velocity);
     std::string clear = "\x1B[39;22m";
     printf("Velocity:    | x: %s", fresh.c_str());
-    printDVLCoordinate(velocity.x);
+    printFloatingPoint(velocity.x);
     printf("%s | y: %s", clear.c_str(), fresh.c_str());
-    printDVLCoordinate(velocity.y);
+    printFloatingPoint(velocity.y);
     printf("%s | z: %s", clear.c_str(), fresh.c_str());
-    printDVLCoordinate(velocity.z);
+    printFloatingPoint(velocity.z);
     printf("%s |\n", clear.c_str());
 }
 
@@ -571,20 +585,20 @@ void Dashboard_TUI::display_drr(const int col_number, DVL_Data position, DVL_Dat
     std::string clear = "\x1B[39;22m";
 
     printf("Position:    | x: %s", position_fresh.c_str());
-    printDVLCoordinate(position.x);
+    printFloatingPoint(position.x);
     printf("%s | y: %s", clear.c_str(), position_fresh.c_str());
-    printDVLCoordinate(position.y);
+    printFloatingPoint(position.y);
     printf("%s | z: %s", clear.c_str(), position_fresh.c_str());
-    printDVLCoordinate(position.z);
+    printFloatingPoint(position.z);
     printf("%s |\n", clear.c_str());
 
     jump_to_column(col_number);
     printf("Orientation: | x: %s", orientation_fresh.c_str());
-    printDVLCoordinate(orientation.x);
+    printFloatingPoint(orientation.x);
     printf("%s | y: %s", clear.c_str(), orientation_fresh.c_str());
-    printDVLCoordinate(orientation.y);
+    printFloatingPoint(orientation.y);
     printf("%s | z: %s", clear.c_str(), orientation_fresh.c_str());
-    printDVLCoordinate(orientation.z);
+    printFloatingPoint(orientation.z);
     printf("%s |\n", clear.c_str());
 
 }
@@ -638,6 +652,64 @@ void Dashboard_TUI::display_commands() {
     printf("[E]: Send Go Signal\n");
     jump_to_column(col_2_3);
     printf("[F]: Revive Pico\n");
+}
+
+void Dashboard_TUI::display_mission_status(const int col_number, Mission_Status status) {
+    std::string current_mission_file = std::string(status.current_mission_file);
+    std::string current_command = std::string(status.current_command);
+
+    for (int i = current_mission_file.size(); i < 32; i++) {
+        current_mission_file.push_back(' ');
+    }
+    for (int i = current_command.size(); i < 32; i++) {
+        current_command.push_back(' ');
+    }
+
+    jump_to_column(col_number);
+    printf("File: ");
+    fflush(stdout);
+    if (fresh_evaluation_time - status.timestamp < 0.5s) {
+        write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
+        fflush(stdout);
+    }
+    printf("%s\n", current_mission_file.c_str());
+    write(STDOUT_FILENO, "\x1B[39;22m", 8);
+    fflush(stdout);
+
+    jump_to_column(col_number);
+    printf("Command: ");
+    fflush(stdout);
+    if (fresh_evaluation_time - status.timestamp < 0.5s) {
+        write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
+        fflush(stdout);
+    }
+    printf("%s\n", current_command.c_str());
+    write(STDOUT_FILENO, "\x1B[39;22m", 8);
+    fflush(stdout);
+
+    jump_to_column(col_number);
+    printf("Total seconds: ");
+    fflush(stdout);
+    if (fresh_evaluation_time - status.timestamp < 0.5s) {
+        write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
+        fflush(stdout);
+    }
+    printFloatingPoint(status.duration_seconds);
+    printf("\n");
+    write(STDOUT_FILENO, "\x1B[39;22m", 8);
+    fflush(stdout);
+
+    jump_to_column(col_number);
+    printf("Seconds left: ");
+    fflush(stdout);
+    if (fresh_evaluation_time - status.timestamp < 0.5s) {
+        write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
+        fflush(stdout);
+    }
+    printFloatingPoint(status.seconds_remaining);
+    printf("\n");
+    write(STDOUT_FILENO, "\x1B[39;22m", 8);
+    fflush(stdout);
 }
 
 void Dashboard_TUI::display_debug(const int col_number, Debug_Message debug) {
@@ -719,6 +791,7 @@ void Dashboard_TUI::display_tui(va_list args) {
     DVL_Data velocity = va_arg(args, DVL_Data);
     DVL_Data position = va_arg(args, DVL_Data);
     DVL_Data orientation = va_arg(args, DVL_Data);
+    Mission_Status status = va_arg(args, Mission_Status);
     Debug_Message debug = va_arg(args, Debug_Message);
     bool ping_ok = (bool)va_arg(args, int);
     double ping_rtt = va_arg(args, double);
@@ -783,6 +856,10 @@ void Dashboard_TUI::display_tui(va_list args) {
     display_mission_manager(current_mux_mode, 2, mission_manager_heartbeat, ready, col_2);
 
     reset_cursor_pos();
+
+    write_header("Mission Status", col_3);
+    display_mission_status(col_3, status);
+    printf("\n");
 
     write_header("Matlab Debug", col_3);
     display_debug(col_3, debug);

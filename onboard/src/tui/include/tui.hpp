@@ -16,6 +16,7 @@
 #include "custom_interfaces/msg/vr.hpp"
 #include "custom_interfaces/msg/drr.hpp"
 #include "custom_interfaces/msg/debug.hpp"
+#include "custom_interfaces/msg/mission_status.hpp"
 #include "custom_interfaces/srv/control_mode.hpp"
 
 using namespace rclcpp;
@@ -36,6 +37,14 @@ typedef struct debug_message {
     char message[257] = {0}; // one byte more so that we get a guaranteed null termination
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
 } Debug_Message;
+
+typedef struct mission_status {
+    char current_mission_file[33] = {0} ;
+    char current_command[33] = {0};
+    double duration_seconds = 0;
+    double seconds_remaining = 0;
+    std::chrono::time_point<std::chrono::steady_clock> timestamp;
+} Mission_Status;
 
 class Dashboard_TUI : public TUI_Interface {
     public:
@@ -60,10 +69,11 @@ class Dashboard_TUI : public TUI_Interface {
         void fill_right_col(const int col_number);
         void display_all_pwms(PWM_Data pwms_cmd, PWM_Data pwms_cli, PWM_Data pwms_ctrl, PWM_Data pwms_echo);
         void display_connection_info(bool connection_ok, double seconds_since_ping, double ping_rtt, const int col_number);
-        void printDVLCoordinate(double coordinate);
+        void printFloatingPoint(double coordinate);
         void display_vr(const int col_number, DVL_Data velocity);
         void display_drr(const int col_number, DVL_Data position, DVL_Data orientation);
         void display_commands();
+        void display_mission_status(const int col_number, Mission_Status status);
         void display_debug(const int col_number, Debug_Message debug);
         std::string dvl_fresh(DVL_Data dvl_data);
         std::string pwm_fresh(PWM_Data pwm_data);
@@ -103,6 +113,7 @@ private:
     rclcpp::Subscription<custom_interfaces::msg::Pwms>::SharedPtr pwm_echo_subscription;
     rclcpp::Subscription<custom_interfaces::msg::VR>::SharedPtr dvl_vr_subscription;
     rclcpp::Subscription<custom_interfaces::msg::DRR>::SharedPtr dvl_drr_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::MissionStatus>::SharedPtr mission_status_subscription;
     rclcpp::Subscription<custom_interfaces::msg::Debug>::SharedPtr matlab_debug_subscription;
     rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr current_control_mode_subscription;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr ready_status_subscription;
@@ -122,6 +133,7 @@ private:
     void pwm_echo_callback(custom_interfaces::msg::Pwms::UniquePtr pwms);
     void dvl_vr_callback(custom_interfaces::msg::VR::UniquePtr vr);
     void dvl_drr_callback(custom_interfaces::msg::DRR::UniquePtr drr);
+    void mission_status_received_callback(custom_interfaces::msg::MissionStatus::UniquePtr status_msg);
     void matlab_debug_received_callback(custom_interfaces::msg::Debug::UniquePtr message);
 
     void heartbeat_check_callback();
@@ -165,6 +177,7 @@ private:
     DVL_Data position;
     DVL_Data orientation;
     Debug_Message debug;
+    Mission_Status status;
 
     rclcpp::Client<custom_interfaces::srv::ControlMode>::SharedPtr mux_client;
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr reset_drr_client;
@@ -188,6 +201,7 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> most_recent_dvl_heartbeat;
     std::chrono::time_point<std::chrono::steady_clock> most_recent_joystick_heartbeat;
     std::chrono::time_point<std::chrono::steady_clock> most_recent_mission_manager_heartbeat;
+    std::chrono::time_point<std::chrono::steady_clock> most_recent_mission_status;
     std::chrono::time_point<std::chrono::steady_clock> most_recent_ping;
     std::chrono::time_point<std::chrono::steady_clock> most_recent_ping_attempt;
 };
