@@ -6,6 +6,7 @@
 #include <custom_interfaces/msg/vr.hpp>
 #include <custom_interfaces/msg/imu.hpp>
 #include <custom_interfaces/msg/pwms.hpp>
+#include <custom_interfaces/msg/command.hpp>
 #include "std_msgs/msg/bool.hpp"
 #include "fd_interface.hpp"
 #include <mutex>
@@ -44,12 +45,19 @@ private:
     rclcpp::Subscription<custom_interfaces::msg::Imu>::SharedPtr imu_subscription;
     rclcpp::Subscription<custom_interfaces::msg::Pwms>::SharedPtr pwm_subscription;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr go_signal_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::Command>::SharedPtr mission_manager_command_subscription;
 
     void dead_reck_report_received_callback(custom_interfaces::msg::DRR::UniquePtr drr_msg);
     void velocity_report_received_callback(custom_interfaces::msg::VR::UniquePtr vr_msg);
     void imu_data_received_callback(custom_interfaces::msg::Imu::UniquePtr imu_msg);
     void pwm_data_received_callback(custom_interfaces::msg::Pwms::UniquePtr pwm_msg);
     void go_signal_received_callback(std_msgs::msg::Bool::UniquePtr go_signal_msg);
+    void command_received_callback(custom_interfaces::msg::Command::UniquePtr command_msg);
+
+    std::string get_waypoint_with_mask(custom_interfaces::msg::Command::UniquePtr command_msg);
+    std::string get_trick_id(custom_interfaces::msg::Command::UniquePtr command_msg);
+
+    std::mutex events_log_mutex;
 };
 
 #endif // DATA_LOGGER_HPP

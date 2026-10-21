@@ -34,13 +34,17 @@ Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
         "go_signal", 10,
         std::bind(&Data_Logger::go_signal_received_callback, this, std::placeholders::_1)
     );
+    mission_manager_command_subscription = this->create_subscription<custom_interfaces::msg::Command>(
+        "current_command", 10,
+        std::bind(&Data_Logger::command_received_callback, this, std::placeholders::_1)
+    );
     // TODO: any additional sensors added in the future, manipulator/dropper commands
     
     std::string drr_header = "time,position_x,position_y,position_z,angle_x,angle_y,angle_z,pos_std\n";
     std::string vr_header = "time,velocity_x,velocity_y,velocity_z,altitude,fom,covariance_1_1,covariance_1_2,covariance_1_3,covariance_2_1,covariance_2_2,covariance_2_3,covariance_3_1,covariance_3_2,covariance_3_3\n";
     std::string imu_header = "time,orientation_x,orientation_y,orientation_z,orientation_w,orientation_covariance_c11,orientation_covariance_c12,orientation_covariance_c13,orientation_covariance_c21,orientation_covariance_c22,orientation_covariance_c23,orientation_covariance_c31,orientation_covariance_c32,orientation_covariance_c33,angular_velocity_x,angular_velocity_y,angular_velocity_z,angular_velocity_covariance_c11,angular_velocity_covariance_c12,angular_velocity_covariance_c13,angular_velocity_covariance_c21,angular_velocity_covariance_c22,angular_velocity_covariance_c23,angular_velocity_covariance_c31,angular_velocity_covariance_c32,angular_velocity_covariance_c33,linear_acceleration_x,linear_acceleration_y,linear_acceleration_z,linear_acceleration_covariance_c11,linear_acceleration_covariance_c12,linear_acceleration_covariance_c13,linear_acceleration_covariance_c21,linear_acceleration_covariance_c22,linear_acceleration_covariance_c23,linear_acceleration_covariance_c31,linear_acceleration_covariance_c32,linear_acceleration_covariance_c33,magnetic_field_x,magnetic_field_y,magnetic_field_z,magnetic_field_covariance_c11,magnetic_field_covariance_c12,magnetic_field_covariance_c13,magnetic_field_covariance_c21,magnetic_field_covariance_c22,magnetic_field_covariance_c23,magnetic_field_covariance_c31,magnetic_field_covariance_c32,magnetic_field_covariance_c33,fluid_pressure,fluid_pressure_variance,pose_position_x,pose_position_y,pose_position_z,pose_orientation_x,pose_orientation_y,pose_orientation_z,pose_orientation_w,pose_covariance_c11,pose_covariance_c12,pose_covariance_c13,pose_covariance_c14,pose_covariance_c15,pose_covariance_c16,pose_covariance_c21,pose_covariance_c22,pose_covariance_c23,pose_covariance_c24,pose_covariance_c25,pose_covariance_c26,pose_covariance_c31,pose_covariance_c32,pose_covariance_c33,pose_covariance_c34,pose_covariance_c35,pose_covariance_c36,pose_covariance_c41,pose_covariance_c42,pose_covariance_c43,pose_covariance_c44,pose_covariance_c45,pose_covariance_c46,pose_covariance_c51,pose_covariance_c52,pose_covariance_c53,pose_covariance_c54,pose_covariance_c55,pose_covariance_c56,pose_covariance_c61,pose_covariance_c62,pose_covariance_c63,pose_covariance_c64,pose_covariance_c65,pose_covariance_c66,twist_linear_x,twist_linear_y,twist_linear_z,twist_angular_x,twist_angular_y,twist_angular_z,twist_covariance_c11,twist_covariance_c12,twist_covariance_c13,twist_covariance_c14,twist_covariance_c15,twist_covariance_c16,twist_covariance_c21,twist_covariance_c22,twist_covariance_c23,twist_covariance_c24,twist_covariance_c25,twist_covariance_c26,twist_covariance_c31,twist_covariance_c32,twist_covariance_c33,twist_covariance_c34,twist_covariance_c35,twist_covariance_c36,twist_covariance_c41,twist_covariance_c42,twist_covariance_c43,twist_covariance_c44,twist_covariance_c45,twist_covariance_c46,twist_covariance_c51,twist_covariance_c52,twist_covariance_c53,twist_covariance_c54,twist_covariance_c55,twist_covariance_c56,twist_covariance_c61,twist_covariance_c62,twist_covariance_c63,twist_covariance_c64,twist_covariance_c65,twist_covariance_c66,roll,pitch\n";
     std::string pwm_header = "time,thruster_0,thruster_1,thruster_2,thruster_3,thruster_4,thruster_5,thruster_6,thruster_7\n";
-    std::string events_header = "time,event\n";
+    std::string events_header = "time,event,extra_0,extra_1\n";
     write(this->drr_fd->get_write_fd(), drr_header.c_str(), drr_header.length());
     write(this->vr_fd->get_write_fd(), vr_header.c_str(), vr_header.length());
     write(this->imu_fd->get_write_fd(), imu_header.c_str(), imu_header.length());
@@ -199,7 +203,84 @@ void Data_Logger::go_signal_received_callback(std_msgs::msg::Bool::UniquePtr go_
     std::string log_data = Data_Logger::get_current_time();
     log_data += ",go_signal";
     log_data += "\n";
+    events_log_mutex.lock();
     write(this->events_fd->get_write_fd(), log_data.c_str(), log_data.length());
+    events_log_mutex.unlock();
+}
+
+std::string Data_Logger::get_waypoint_with_mask(custom_interfaces::msg::Command::UniquePtr command_msg) {
+    std::string waypoint = "";
+    auto pose_6d = command_msg->position;
+    auto pose_6d_mask = command_msg->position_mask;
+    if (pose_6d_mask.x) {
+        waypoint += "x:" + std::to_string(pose_6d.x) + " ";
+    }
+    if (pose_6d_mask.y) {
+        waypoint += "y:" + std::to_string(pose_6d.y) + " ";
+    }
+    if (pose_6d_mask.z) {
+        waypoint += "z:" + std::to_string(pose_6d.z) + " ";
+    }
+    if (pose_6d_mask.roll) {
+        waypoint += "roll:" + std::to_string(pose_6d.roll) + " ";
+    }
+    if (pose_6d_mask.pitch) {
+        waypoint += "pitch:" + std::to_string(pose_6d.pitch) + " ";
+    }
+    if (pose_6d_mask.yaw) {
+        waypoint += "yaw:" + std::to_string(pose_6d.yaw) + " ";
+    }
+    return waypoint;
+}
+
+std::string Data_Logger::get_trick_id(custom_interfaces::msg::Command::UniquePtr command_msg) {
+    std::string trick_id = "";
+    for (char character : command_msg->trick_id) {
+        if (character == '\0') {
+            break;
+        }
+        trick_id += character;
+    }
+    return trick_id;
+}
+
+void Data_Logger::command_received_callback(custom_interfaces::msg::Command::UniquePtr command_msg) {
+    std::string log_data = Data_Logger::get_current_time();
+    log_data += ",new_command,";
+    auto command_int = command_msg->command;
+    if (command_int == command_msg->IDLE) {
+        log_data += "idle";
+    } else if (command_int == command_msg->DRIVE_TO_WORLD_WAYPOINT) {
+        log_data += "drive_to_world_waypoint";
+        std::string waypoint = get_waypoint_with_mask(std::move(command_msg));
+        if (waypoint != "") {
+            log_data += "," + waypoint;
+        }
+    } else if (command_int == command_msg->DRIVE_TO_WORLD_WAYPOINT_SEEKING) {
+        log_data += "drive_to_world_waypoint_seeking";
+        std::string waypoint = get_waypoint_with_mask(std::move(command_msg));
+        if (waypoint != "") {
+            log_data += "," + waypoint;
+        }
+    } else if (command_int == command_msg->TRACK_OBJECT_WAYPOINT) {
+        log_data += "track_object_waypoint";
+        std::string waypoint = get_waypoint_with_mask(std::move(command_msg));
+        if (waypoint != "") {
+            log_data += "," + waypoint;
+        }
+    } else if (command_int == command_msg->DURATION_TRICK) {
+        log_data += "duration_trick,";
+        log_data += get_trick_id(std::move(command_msg));
+    } else if (command_int == command_msg->DISTANCE_TRICK) {
+        log_data += "distance_trick,";
+        log_data += get_trick_id(std::move(command_msg));
+    } else {
+        log_data += "unknown_command";
+    }
+    log_data += "\n";
+    events_log_mutex.lock();
+    write(this->events_fd->get_write_fd(), log_data.c_str(), log_data.length());
+    events_log_mutex.unlock();
 }
 
 std::string Data_Logger::get_current_time() {
