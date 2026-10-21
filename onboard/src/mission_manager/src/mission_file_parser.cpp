@@ -23,8 +23,8 @@ MissionFileParser::MissionFileParser() {
 }
 
 void MissionFileParser::add_file_to_parse(std::string file_name) {
-    files_not_yet_parsed.push(file_name);
-    files_to_parse.push(file_name);
+    mission_files_not_yet_parsed.push(file_name);
+    registered_mission_files.push(file_name);
 }
 
 void MissionFileParser::parse_mission_list_file(std::string file_name) {
@@ -47,7 +47,7 @@ void MissionFileParser::parse_always_run_file() {
 
 void MissionFileParser::parse_all_files() {
     parsed_missions.clear();
-    files_not_yet_parsed = files_to_parse;
+    mission_files_not_yet_parsed = registered_mission_files;
     parse_new_files();
 }
 
@@ -106,10 +106,10 @@ void MissionFileParser::print_mission_tree(std::shared_ptr<Command> tree, uint8_
     }
 }
 
-void MissionFileParser::print_all_parsed_missions() {
-    auto files_to_parse_copy = files_to_parse;
+void MissionFileParser::print_all_registered_missions() {
+    auto files_to_parse_copy = registered_mission_files;
     while (!files_to_parse_copy.empty()) {
-        std::cout << files_to_parse.front() << "\n";
+        std::cout << registered_mission_files.front() << "\n";
         files_to_parse_copy.pop();
     }
 }
@@ -118,8 +118,8 @@ void MissionFileParser::print_all_parsed_missions() {
 // TODO: handle bad parsing (maybe catch exception, report, abort)
 void MissionFileParser::parse_new_files() {
     std::string file_name;
-    while (!files_not_yet_parsed.empty()) {
-        file_name = files_not_yet_parsed.front();
+    while (!mission_files_not_yet_parsed.empty()) {
+        file_name = mission_files_not_yet_parsed.front();
         // TODO: more robust path handling
         auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
         if (!file.good()) {
@@ -225,7 +225,7 @@ void MissionFileParser::parse_new_files() {
             auto root = std::make_shared<Root>();
             root->set_next(command_registry[tree["ref"]].second);
             parsed_missions.push_back(Mission(root,file_name));
-            files_not_yet_parsed.pop();
+            mission_files_not_yet_parsed.pop();
         } catch (const std::exception& e) {
             // Temporary exception type, replace with custom exception
             throw std::runtime_error("Was on command \"" + reference + "\" and failed to parse mission file \"" + file_name + "\": " + e.what());

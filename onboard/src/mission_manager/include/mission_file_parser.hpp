@@ -35,7 +35,7 @@ public:
     virtual bool jump_to_mission(uint8_t mission_index);
     virtual std::shared_ptr<Root> get_next_mission();
     virtual void print_mission_tree_at_index(uint8_t mission_index);
-    virtual void print_all_parsed_missions();
+    virtual void print_all_registered_missions();
 protected:
     virtual void print_mission_tree(std::shared_ptr<Command> tree, uint8_t num_spaces);
     virtual std::unique_ptr<custom_interfaces::msg::Pose6D> make_waypoint(json parameters_field);
@@ -44,8 +44,8 @@ protected:
     virtual std::array<uint8_t,16> string_to_array(std::string string);
     virtual std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> parse_tree(json tree, std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> registry);
 
-    std::queue<std::string> files_to_parse;
-    std::queue<std::string> files_not_yet_parsed;
+    std::queue<std::string> registered_mission_files;
+    std::queue<std::string> mission_files_not_yet_parsed;
     std::vector<Mission> parsed_missions;
     uint8_t next_mission_index;
 };
