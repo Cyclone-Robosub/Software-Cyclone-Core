@@ -131,7 +131,7 @@ void MissionManager::go_signal_callback(std_msgs::msg::Bool::SharedPtr signal) {
     */
     (void)signal; // stop compiler complaining
 
-    /* Quick and dirty debouncing */
+    /* Quick and dirty debouncing TODO remove once debouncing implemented in microROS */
     auto now = std::chrono::steady_clock::now();
     if (now - last_go_switch_update < 2s) {
         return;
