@@ -1,7 +1,36 @@
 #include "central_logger.hpp"
 
+#include <chrono>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <stdexcept>
 #include <rclcpp/executors.hpp>
+
+namespace
+{
+std::string get_cur_timestamp()
+{
+    const auto now = std::chrono::system_clock::now();
+    const auto seconds = std::chrono::floor<std::chrono::seconds>(now);
+    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        now - seconds)
+                        .count();
+    const auto time = std::chrono::system_clock::to_time_t(seconds);
+
+    std::tm local{};
+    if (localtime_r(&time, &local) == nullptr)
+    {
+        throw std::runtime_error("Could not convert local time");
+    }
+
+    std::ostringstream result;
+    result << std::put_time(&local, "%Y-%m-%d_%H-%M-%S")
+           << '-' << std::setfill('0') << std::setw(3) << ms;
+    return result.str();
+}
+} // namespace
 
 central_logger::central_logger()
 : rclcpp::Node("Central_logger")
@@ -12,14 +41,7 @@ central_logger::central_logger()
         throw std::runtime_error("HOME not found");
     }
 
-    const auto now = std::chrono::system_clock::now();
-    const std::time_t time = std::chrono::system_clock::to_time_t(now);
-    std::ostringstream date;
-    // TODO: what timestamp format? How granular?
-    date << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
-
-    current_run_dir = std::filesystem::path(home) / "Robosub" / "Logs" / date.str();
-    // TODO: can throw what to do?
+    current_run_dir = std::filesystem::path(home) / "Robosub" / "Logs" / get_cur_timestamp();
     std::filesystem::create_directories(current_run_dir);
 
     loginfo_subscriber = this->create_subscription<custom_interfaces::msg::Loginfo>("loginfo_receive", 10, std::bind(&central_logger::central_logger_callback, this, std::placeholders::_1));
@@ -49,10 +71,9 @@ void central_logger::log_to_file(const std::array<std::uint8_t, 32>& name, const
         return;
     }
 
-    const auto now = std::chrono::system_clock::now();
-    const std::time_t time = std::chrono::system_clock::to_time_t(now);
-    // TODO: timestamp format? Should logs be on newlines? Should everyline have a timestamp or just 1 per file?
-    file << std::put_time(std::localtime(&time), "%Y-%m-%d") << ':' << msg_contents << '\n';
+    file << get_cur_timestamp()
+         << ':' << msg_contents << '\n';
+    file.flush();
     if (!file)
     {
         RCLCPP_ERROR(this->get_logger(), "Could not write log file: '%s'", log_file.c_str());
