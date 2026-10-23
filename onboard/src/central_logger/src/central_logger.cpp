@@ -26,7 +26,7 @@ std::string get_cur_timestamp()
     }
 
     std::ostringstream result;
-    result << std::put_time(&local, "%Y-%m-%d_%H-%M-%S")
+    result << std::put_time(&local, "%Y-%m-%d-%H-%M-%S")
            << '-' << std::setfill('0') << std::setw(3) << ms;
     return result.str();
 }
@@ -72,7 +72,7 @@ void central_logger::log_to_file(const std::array<std::uint8_t, 32>& name, const
     }
 
     file << get_cur_timestamp()
-         << ':' << msg_contents << '\n';
+         << ": " << msg_contents << '\n';
     file.flush();
     if (!file)
     {
