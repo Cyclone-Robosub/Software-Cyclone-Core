@@ -199,7 +199,7 @@ void Dashboard::dvl_drr_callback(custom_interfaces::msg::DRR::UniquePtr drr) {
 }
 
 void Dashboard::matlab_debug_f0_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr msg) {
-    for (int i = 0; i < 16; i ++) { 
+    for (int i = 0; i < 16; i++) { 
         debug_flag_0.name[i] = msg->name[i];
     }
     debug_flag_0.value = msg->value;
@@ -207,7 +207,7 @@ void Dashboard::matlab_debug_f0_received_callback(custom_interfaces::msg::DebugF
 }
 
 void Dashboard::matlab_debug_f1_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr msg) {
-    for (int i = 0; i < 16; i ++) { 
+    for (int i = 0; i < 16; i++) { 
         debug_flag_1.name[i] = msg->name[i];
     }
     debug_flag_1.value = msg->value;
@@ -215,7 +215,7 @@ void Dashboard::matlab_debug_f1_received_callback(custom_interfaces::msg::DebugF
 }
 
 void Dashboard::matlab_debug_f2_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr msg) {
-    for (int i = 0; i < 16; i ++) { 
+    for (int i = 0; i < 16; i++) { 
         debug_flag_2.name[i] = msg->name[i];
     }
     debug_flag_2.value = msg->value;
@@ -426,7 +426,7 @@ void Dashboard::work_loop() {
 void Dashboard::refresh_display() {
     auto now = std::chrono::steady_clock::now();
     seconds_since_ping = (double)((now - most_recent_ping) / 1ms) / (double)1000;
-    tui->refresh_display(21, current_control_mode,
+    tui->refresh_display(32, current_control_mode,
                              thrust_interface_heartbeat,
                              mux_heartbeat,
                              cli_heartbeat,
@@ -443,7 +443,17 @@ void Dashboard::refresh_display() {
                              position,
                              orientation,
                              status,
-                            //  debug,
+                             debug_flag_0,
+                             debug_flag_1,
+                             debug_flag_2,
+                             debug_position,
+                             debug_orientation,
+                             debug_angle_rate,
+                             debug_angle_velocity,
+                             debug_position_setpt,
+                             debug_orientation_setpt,
+                             debug_angle_rate_setpt,
+                             debug_angle_velocity_setpt,
                              ping_ok,
                              rtt,
                              seconds_since_ping,
@@ -517,6 +527,17 @@ void Dashboard_TUI::display_status_with_colour(bool heartbeat, const int col_num
         printf("============ OK ============\n");
     }
     jump_to_column(col_number);
+}
+
+void Dashboard_TUI::display_blue_if_stale(std::chrono::time_point<std::chrono::steady_clock> timestamp, std::string message){
+    fflush(stdout);
+    if (fresh_evaluation_time - timestamp < 0.5s) {
+        write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
+        fflush(stdout);
+    }
+    printf("%s\n", message.c_str());
+    write(STDOUT_FILENO, "\x1B[39;22m", 8);
+    fflush(stdout);
 }
 
 void Dashboard_TUI::display_warning_status(bool heartbeat, const int col_number) {
@@ -627,12 +648,14 @@ void Dashboard_TUI::display_connection_info(bool connection_ok, double seconds_s
     }
 }
 
-void Dashboard_TUI::printFloatingPoint(double coordinate) {
+std::string Dashboard_TUI::format_floating_point(double coordinate) {
+    char buf[11] = {0};
     if (fabs(coordinate) > 999) { // impossibly large number
-        printf(" Overflow ");
-    } else { // standard
-        printf("% 010.5f", coordinate);
+        snprintf(buf, 11, "%s", " Overflow ");
+    } else {
+        snprintf(buf, 11, "% 010.5f", coordinate);
     }
+    return std::string(buf);
 }
 
 void Dashboard_TUI::display_vr(const int col_number, DVL_VR_Data velocity) {
@@ -640,13 +663,13 @@ void Dashboard_TUI::display_vr(const int col_number, DVL_VR_Data velocity) {
     std::string fresh = dvl_fresh(velocity);
     std::string clear = "\x1B[39;22m";
     printf("Velocity:    | x: %s", fresh.c_str());
-    printFloatingPoint(velocity.x);
+    printf("%s", format_floating_point(velocity.x).c_str());
     printf("%s | y: %s", clear.c_str(), fresh.c_str());
-    printFloatingPoint(velocity.y);
+    printf("%s", format_floating_point(velocity.y).c_str());
     printf("%s | z: %s", clear.c_str(), fresh.c_str());
-    printFloatingPoint(velocity.z);
+    printf("%s", format_floating_point(velocity.z).c_str());
     printf("%s | alt: %s", clear.c_str(), fresh.c_str());
-    printFloatingPoint(velocity.altitude);
+    printf("%s", format_floating_point(velocity.altitude).c_str());
     printf("%s |\n", clear.c_str());
 }
 
@@ -658,22 +681,21 @@ void Dashboard_TUI::display_drr(const int col_number, DVL_Data position, DVL_Dat
     std::string clear = "\x1B[39;22m";
 
     printf("Position:    | x: %s", position_fresh.c_str());
-    printFloatingPoint(position.x);
+    printf("%s", format_floating_point(position.x).c_str());
     printf("%s | y: %s", clear.c_str(), position_fresh.c_str());
-    printFloatingPoint(position.y);
+    printf("%s", format_floating_point(position.y).c_str());
     printf("%s | z: %s", clear.c_str(), position_fresh.c_str());
-    printFloatingPoint(position.z);
+    printf("%s", format_floating_point(position.z).c_str());
     printf("%s |\n", clear.c_str());
 
     jump_to_column(col_number);
     printf("Orientation: | x: %s", orientation_fresh.c_str());
-    printFloatingPoint(orientation.x);
+    printf("%s", format_floating_point(orientation.x).c_str());
     printf("%s | y: %s", clear.c_str(), orientation_fresh.c_str());
-    printFloatingPoint(orientation.y);
+    printf("%s", format_floating_point(orientation.y).c_str());
     printf("%s | z: %s", clear.c_str(), orientation_fresh.c_str());
-    printFloatingPoint(orientation.z);
+    printf("%s", format_floating_point(orientation.z).c_str());
     printf("%s |\n", clear.c_str());
-
 }
 
 std::string Dashboard_TUI::dvl_fresh(DVL_Data dvl_data) {
@@ -762,65 +784,67 @@ void Dashboard_TUI::display_mission_status(const int col_number, Mission_Status 
 
     jump_to_column(col_number);
     printf("Total seconds: ");
-    fflush(stdout);
-    if (fresh_evaluation_time - status.timestamp < 0.5s) {
-        write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
-        fflush(stdout);
-    }
-    printFloatingPoint(status.duration_seconds);
-    printf("\n");
-    write(STDOUT_FILENO, "\x1B[39;22m", 8);
-    fflush(stdout);
+    display_blue_if_stale(status.timestamp, format_floating_point(status.duration_seconds));
 
     jump_to_column(col_number);
     printf("Seconds left: ");
-    fflush(stdout);
-    if (fresh_evaluation_time - status.timestamp < 0.5s) {
-        write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
-        fflush(stdout);
-    }
-    printFloatingPoint(status.seconds_remaining);
-    printf("\n");
-    write(STDOUT_FILENO, "\x1B[39;22m", 8);
-    fflush(stdout);
+    display_blue_if_stale(status.timestamp, format_floating_point(status.seconds_remaining));
 }
 
-// void Dashboard_TUI::display_debug(const int col_number, Debug_Message debug) {
-//     std::string message = std::string(debug.message);
-//     jump_to_column(col_number);
-//     if (fresh_evaluation_time - debug.timestamp < 0.5s) {
-//         write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
-//         fflush(stdout);
-//     }
-//     int message_length = message.length();
-//     int curr_debug_length = message_length;
-//     int col_offset = 0;
-//     for (int i = 0; i < prev_debug_length; i++) { // this is pretty inefficient: better to write the full 35-char block at once. Seems harder though.
-//         col_offset++;
-//         if (col_offset > 0 && col_offset % 45 == 0) {
-//             printf("\n");
-//             jump_to_column(col_number);
-//             col_offset = 0;
-//         }
+void Dashboard_TUI::display_debug(
+    const int col_number, 
+    int num_flags,
+    Debug_Flag_Msg* flags, 
+    Debug_State_Data* actual_point, 
+    Debug_State_Data* set_point
+) {
+    const int col_number_states = col_number + 13; // flag name, flag value, margin of 13
 
-//         if (i < message_length) {
-//             char curr_char = message[i];
-//             printf("%c", curr_char);
-//             if (curr_char == '\n') {
-//                 jump_to_column(col_number);
-//                 curr_debug_length += 45;
-//                 col_offset = 0;
-//             }
-//         }
-//         else {
-//             printf(" ");
-//         }
+    for(int i = 0; i < num_flags; i++) {
+        std::string name = std::string(flags[i].name);
+        jump_to_column(col_number);
+        printf("%-17s", (name + ":").c_str());
+        display_blue_if_stale(flags[i].timestamp, format_floating_point(flags[i].value));
+        printf("\n");
+    }
 
-//     }
-//     prev_debug_length = curr_debug_length;
-//     printf("\n");
-//     write(STDOUT_FILENO, "\x1B[39;22m\n", 9);
-// }
+    std::unique_ptr<std::string[]> states(new std::string[]{
+        "x", "y", "z", 
+        "roll", "pitch", "yaw",
+        "vx", "vy", "vz",
+        "p", "q", "r"});
+    
+    jump_to_column(col_number_states + 9);
+    printf("actual       setpt.\n\n");
+
+    int state_idx = 0;
+    for(int i = 0; i < 4; i++) {
+        Debug_State_Data actual = actual_point[i];
+        Debug_State_Data setpoint = set_point[i];
+
+        jump_to_column(col_number_states);
+        printf("%-7s", (states[state_idx++] + ":").c_str());
+        display_blue_if_stale(actual.timestamp, format_floating_point(actual.x));
+        printf(" | ");
+        jump_to_column(col_number_states + 7 + 10);
+        display_blue_if_stale(setpoint.timestamp, format_floating_point(setpoint.x));
+
+        jump_to_column(col_number_states);
+        printf("%-7s", (states[state_idx++] + ":").c_str());
+        display_blue_if_stale(actual.timestamp, format_floating_point(actual.y));
+        printf(" | ");
+        jump_to_column(col_number_states + 7 + 10);
+        display_blue_if_stale(setpoint.timestamp, format_floating_point(setpoint.y));
+
+        jump_to_column(col_number_states);
+        printf("%-7s", (states[state_idx++] + ":").c_str());
+        display_blue_if_stale(actual.timestamp, format_floating_point(actual.z));
+        printf(" | ");
+        jump_to_column(col_number_states + 7 + 10);
+        display_blue_if_stale(setpoint.timestamp, format_floating_point(setpoint.z));
+    }
+    write(STDOUT_FILENO, "\x1B[39;22m\n", 9);
+}
 
 std::string Dashboard::get_ping() { // TODO: when robot looses connection ping hangs for ~10 seconds. Break into seperate thread
     int pipe_fds[2];
@@ -886,6 +910,10 @@ void Dashboard_TUI::display_tui(va_list args) {
     bool ready = (bool)va_arg(args, int);
     va_end(args);
     
+    int num_flags = 3;
+    Debug_Flag_Msg debug_flags[3] = {debug_flag_0, debug_flag_1, debug_flag_2};
+    Debug_State_Data debug_states_actual[4] = {debug_position, debug_orientation, debug_angle_rate, debug_angle_velocity};
+    Debug_State_Data debug_states_setpt[4] = {debug_position_setpt, debug_orientation_setpt, debug_angle_rate_setpt, debug_angle_velocity_setpt};
     fresh_evaluation_time = std::chrono::steady_clock::now();
 
     write(STDOUT_FILENO, "\x1B[?25l", 6); // invisible cursor
@@ -949,7 +977,7 @@ void Dashboard_TUI::display_tui(va_list args) {
     printf("\n");
 
     write_header("Matlab Debug", col_3);
-    // display_debug(col_3, debug_stream_0, debug_stream_1, debug_stream_2, debug_float_0, debug_float_1, debug_int_0, debug_int_1);
+    display_debug(col_3, num_flags, debug_flags, debug_states_actual, debug_states_setpt);
 
     write(STDOUT_FILENO, "\x1B[38;29H", 8); // jumpt to prompt (line/column)
     write(STDOUT_FILENO, "\x1B[?25h", 6); // visible cursor

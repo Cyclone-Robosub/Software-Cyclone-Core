@@ -44,7 +44,7 @@ struct Debug_Flag_Msg {
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
 };
 
-struct Debug_State_Data {//position, position_setpoint
+struct Debug_State_Data {
     double x = 0; 
     double y = 0;
     double z = 0;
@@ -71,6 +71,7 @@ class Dashboard_TUI : public TUI_Interface {
         void write_header(std::string header, const int col_number);
         void write_selectable_header(std::string header, int current_mode, int active_mode, const int col_number);
         void display_status_with_colour(bool heartbeat, const int col_number, std::string colour_string);
+        void display_blue_if_stale(std::chrono::time_point<std::chrono::steady_clock> timestamp, std::string message);
         void display_critical_status(bool heartbeat, const int col_number);
         void display_warning_status(bool heartbeat, const int col_number);
         void display_noncritical_status(bool heartbeat, const int col_number);
@@ -82,12 +83,12 @@ class Dashboard_TUI : public TUI_Interface {
         void fill_right_col(const int col_number);
         void display_all_pwms(PWM_Data pwms_cmd, PWM_Data pwms_cli, PWM_Data pwms_ctrl, PWM_Data pwms_echo);
         void display_connection_info(bool connection_ok, double seconds_since_ping, double ping_rtt, const int col_number);
-        void printFloatingPoint(double coordinate);
         void display_vr(const int col_number, DVL_VR_Data velocity);
         void display_drr(const int col_number, DVL_Data position, DVL_Data orientation);
         void display_commands();
         void display_mission_status(const int col_number, Mission_Status status);
-        // void display_debug(const int col_number, Debug_Message debug);
+        void display_debug(const int col_number, int num_flags, Debug_Flag_Msg* flags, Debug_State_Data* actual_point, Debug_State_Data* set_point);
+        std::string format_floating_point(double coordinate);
         std::string dvl_fresh(DVL_Data dvl_data);
         std::string pwm_fresh(PWM_Data pwm_data);
         std::chrono::time_point<std::chrono::steady_clock> fresh_evaluation_time;
