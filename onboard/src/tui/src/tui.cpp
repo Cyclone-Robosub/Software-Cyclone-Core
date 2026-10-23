@@ -535,7 +535,7 @@ void Dashboard_TUI::display_blue_if_stale(std::chrono::time_point<std::chrono::s
         write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
         fflush(stdout);
     }
-    printf("%s\n", message.c_str());
+    printf("%s", message.c_str());
     write(STDOUT_FILENO, "\x1B[39;22m", 8);
     fflush(stdout);
 }
@@ -762,33 +762,23 @@ void Dashboard_TUI::display_mission_status(const int col_number, Mission_Status 
 
     jump_to_column(col_number);
     printf("File: ");
-    fflush(stdout);
-    if (fresh_evaluation_time - status.timestamp < 0.5s) {
-        write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
-        fflush(stdout);
-    }
-    printf("%s\n", current_mission_file.c_str());
-    write(STDOUT_FILENO, "\x1B[39;22m", 8);
-    fflush(stdout);
+    display_blue_if_stale(status.timestamp, current_mission_file);
+    printf("\n");
 
     jump_to_column(col_number);
     printf("Command: ");
-    fflush(stdout);
-    if (fresh_evaluation_time - status.timestamp < 0.5s) {
-        write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
-        fflush(stdout);
-    }
-    printf("%s\n", current_command.c_str());
-    write(STDOUT_FILENO, "\x1B[39;22m", 8);
-    fflush(stdout);
+    display_blue_if_stale(status.timestamp, current_command);
+    printf("\n");
 
     jump_to_column(col_number);
     printf("Total seconds: ");
     display_blue_if_stale(status.timestamp, format_floating_point(status.duration_seconds));
+    printf("\n");
 
     jump_to_column(col_number);
     printf("Seconds left: ");
     display_blue_if_stale(status.timestamp, format_floating_point(status.seconds_remaining));
+    printf("\n");
 }
 
 void Dashboard_TUI::display_debug(
@@ -798,8 +788,6 @@ void Dashboard_TUI::display_debug(
     Debug_State_Data* actual_point, 
     Debug_State_Data* set_point
 ) {
-    const int col_number_states = col_number + 13; // flag name, flag value, margin of 13
-
     for(int i = 0; i < num_flags; i++) {
         std::string name = std::string(flags[i].name);
         jump_to_column(col_number);
@@ -814,7 +802,8 @@ void Dashboard_TUI::display_debug(
         "vx", "vy", "vz",
         "p", "q", "r"});
     
-    jump_to_column(col_number_states + 9);
+    printf("\n");
+    jump_to_column(col_number + 9);
     printf("actual       setpt.\n\n");
 
     int state_idx = 0;
@@ -822,26 +811,29 @@ void Dashboard_TUI::display_debug(
         Debug_State_Data actual = actual_point[i];
         Debug_State_Data setpoint = set_point[i];
 
-        jump_to_column(col_number_states);
+        jump_to_column(col_number);
         printf("%-7s", (states[state_idx++] + ":").c_str());
         display_blue_if_stale(actual.timestamp, format_floating_point(actual.x));
         printf(" | ");
-        jump_to_column(col_number_states + 7 + 10);
+        jump_to_column(col_number + 7 + 10);
         display_blue_if_stale(setpoint.timestamp, format_floating_point(setpoint.x));
+        printf("\n");
 
-        jump_to_column(col_number_states);
+        jump_to_column(col_number);
         printf("%-7s", (states[state_idx++] + ":").c_str());
         display_blue_if_stale(actual.timestamp, format_floating_point(actual.y));
         printf(" | ");
-        jump_to_column(col_number_states + 7 + 10);
+        jump_to_column(col_number + 7 + 10);
         display_blue_if_stale(setpoint.timestamp, format_floating_point(setpoint.y));
+        printf("\n");
 
-        jump_to_column(col_number_states);
+        jump_to_column(col_number);
         printf("%-7s", (states[state_idx++] + ":").c_str());
         display_blue_if_stale(actual.timestamp, format_floating_point(actual.z));
         printf(" | ");
-        jump_to_column(col_number_states + 7 + 10);
+        jump_to_column(col_number + 7 + 10);
         display_blue_if_stale(setpoint.timestamp, format_floating_point(setpoint.z));
+        printf("\n");
     }
     write(STDOUT_FILENO, "\x1B[39;22m\n", 9);
 }
