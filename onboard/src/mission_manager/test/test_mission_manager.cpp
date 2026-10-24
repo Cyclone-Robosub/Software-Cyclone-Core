@@ -62,10 +62,10 @@ TEST_F(TestParser, MissionList) {
     }
 
     // Seemingly getting segfaults from running parser->get_next_mission()
-    // auto root = parser->get_next_mission();
-    // EXPECT_EQ(parser->get_current_mission_name(), "test_sample_mission_file.json");
-    // root = parser->get_next_mission();
-    // EXPECT_EQ(parser->get_current_mission_name(), "test_sample_mission_file_2.json");
+    auto root = parser->get_next_mission();
+    EXPECT_EQ(parser->get_current_mission_name(), "test_sample_mission_file.json");
+    root = parser->get_next_mission();
+    EXPECT_EQ(parser->get_current_mission_name(), "test_sample_mission_file_2.json");
     // Cannot move to last index to check name without going out of bounds. Unknown if this will be an issue for running program
 }
 

@@ -18,7 +18,7 @@ std::string Mission::get_name() {
     return name;
 }
 
-MissionFileParser::MissionFileParser(std::string mission_folder_path) : mission_folder_path(mission_folder_path) {
+MissionFileParser::MissionFileParser(std::string mission_folder_path) : next_mission_index(0), mission_folder_path(mission_folder_path) {
     // Intentionally left blank
 }
 
