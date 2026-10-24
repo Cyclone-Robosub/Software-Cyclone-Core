@@ -1,0 +1,109 @@
+{
+    "commands": [
+        {
+            "reference": "go_forwards",
+            "action": "drive_to_world_waypoint",
+            "parameters": {
+                "goal_waypoint": {
+                    "x": 5.0,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "waypoint_mask": {
+                    "x": true,
+                    "y": true,
+                    "z": false,
+                    "roll": false,
+                    "pitch": false,
+                    "yaw": false 
+                },
+                "tolerance": {
+                    "x": 0.5,
+                    "y": 0.3,
+                    "z": 0.0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "hold_time": 5.0,
+                "timeout": 30
+            }
+        },
+        {
+            "reference": "turn_sideways",
+            "action": "drive_to_world_waypoint",
+            "parameters": {
+                "goal_waypoint": {
+                    "x": 5.0,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 1.5707963268 
+                },
+                "waypoint_mask": {
+                    "x": true,
+                    "y": true,
+                    "z": false,
+                    "roll": false,
+                    "pitch": false,
+                    "yaw": true
+                },
+                "tolerance": {
+                    "x": 0.5,
+                    "y": 0.3,
+                    "z": 0.0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0.25
+                },
+                "hold_time": 2.0,
+                "timeout": 10
+            }
+        },
+        {
+            "reference": "return_to_start",
+            "action": "drive_to_world_waypoint",
+            "parameters": {
+                "goal_waypoint": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 1.5707963268 
+                },
+                "waypoint_mask": {
+                    "x": true,
+                    "y": true,
+                    "z": false,
+                    "roll": false,
+                    "pitch": false,
+                    "yaw": true
+                },
+                "tolerance": {
+                    "x": 0.5,
+                    "y": 0.3,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0.25
+                },
+                "hold_time": 5.0,
+                "timeout": 30
+            }
+        }
+    ],
+    "tree": {
+        "ref": "go_forwards",
+        "next": {
+            "ref": "turn_sideways",
+            "next": {
+                "ref": "return_to_start"
+            }
+        }
+    }
+}

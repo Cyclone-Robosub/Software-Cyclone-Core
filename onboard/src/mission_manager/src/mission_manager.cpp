@@ -184,7 +184,7 @@ void MissionManager::add_mission_list_callback(const std::shared_ptr<custom_inte
         return;
     }
     try {
-        parser->parse_mission_list_file(request->file_name);
+        parser->add_from_mission_list_file(request->file_name);
         parser->parse_new_files();
     } catch (const std::exception& e) {
         response->success = false;
@@ -251,7 +251,7 @@ int main(int argc, char * argv[]) {
     rclcpp::init(argc, argv);
     auto parser = std::make_unique<MissionFileParser>();
     try {
-        parser->parse_always_run_file();
+        parser->add_from_always_run_file();
         parser->parse_all_files();
     } catch (std::exception& e) {
         fprintf(stderr, "Exception occured: %s", e.what());

@@ -18,8 +18,8 @@ std::string Mission::get_name() {
     return name;
 }
 
-MissionFileParser::MissionFileParser() {
-    // intentionally blank
+MissionFileParser::MissionFileParser(std::string mission_folder_path) : next_mission_index(0), mission_folder_path(mission_folder_path) {
+    // Intentionally left blank
 }
 
 void MissionFileParser::add_file_to_parse(std::string file_name) {
@@ -27,12 +27,11 @@ void MissionFileParser::add_file_to_parse(std::string file_name) {
     registered_mission_files.push(file_name);
 }
 
-void MissionFileParser::parse_mission_list_file(std::string file_name) {
+void MissionFileParser::add_from_mission_list_file(std::string file_name) {
     // TODO: more robust path handling
-    auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
+    auto file = std::ifstream(mission_folder_path + file_name);
     if (!file.good()) {
-        fprintf(stderr, "Mission list '%s' not recognized!\n", file_name.c_str());
-        throw std::invalid_argument("Mission list not recognized");
+        throw std::invalid_argument("Mission list '" + file_name + "' not recognized!\n");
     }
     std::string mission_file;
     while (getline(file, mission_file)) {
@@ -41,8 +40,8 @@ void MissionFileParser::parse_mission_list_file(std::string file_name) {
     }
 }
 
-void MissionFileParser::parse_always_run_file() {
-    parse_mission_list_file("always_run.txt");
+void MissionFileParser::add_from_always_run_file() {
+    add_from_mission_list_file("always_run.txt");
 }
 
 void MissionFileParser::parse_all_files() {
@@ -114,17 +113,13 @@ void MissionFileParser::print_all_registered_missions() {
     }
 }
 
-// TODO: add trick id if it exists
-// TODO: handle bad parsing (maybe catch exception, report, abort)
 void MissionFileParser::parse_new_files() {
     std::string file_name;
     while (!mission_files_not_yet_parsed.empty()) {
         file_name = mission_files_not_yet_parsed.front();
-        // TODO: more robust path handling
-        auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
+        auto file = std::ifstream(mission_folder_path + file_name);
         if (!file.good()) {
-            fprintf(stderr, "Mission file '%s' not recognized!\n", file_name.c_str());
-            throw std::invalid_argument("Mission file not recognized");
+            throw std::invalid_argument("Mission file '" + file_name + "' not recognized!\n");
         }
 
         std::string reference;
@@ -171,7 +166,7 @@ void MissionFileParser::parse_new_files() {
                     );
                 } else if (action == "idle") {
                     if (trick_id.has_value()) {
-                        throw std::runtime_error("trick_id provided for idle, but idle doesn't accept trick_id");
+                        throw std::runtime_error("trick_id provided for idle, but idle doesn't accept trick_id\n");
                     }
                     command_entry = std::make_shared<Idle>(
                         reference,
@@ -190,7 +185,7 @@ void MissionFileParser::parse_new_files() {
                     );
                 } else if (action == "duration_trick") {
                     if (!trick_id.has_value()) {
-                        throw std::runtime_error("trick_id not provided for duration_trick");
+                        throw std::runtime_error("trick_id not provided for duration_trick\n");
                     }
                     command_entry = std::make_shared<DurationTrick>(
                         reference,
@@ -203,7 +198,7 @@ void MissionFileParser::parse_new_files() {
                     );
                 } else if (action == "distance_trick") {
                     if (!trick_id.has_value()) {
-                        throw std::runtime_error("trick_id not provided for distance_trick");
+                        throw std::runtime_error("trick_id not provided for distance_trick\n");
                     }
                     command_entry = std::make_shared<DistanceTrick>(
                         reference,
@@ -215,7 +210,7 @@ void MissionFileParser::parse_new_files() {
                         parameters["timeout"]
                     );
                 } else {
-                    throw std::runtime_error("Command name " + action + " does not match any known command");
+                    throw std::runtime_error("Command name " + action + " does not match any known command\n");
                 }
 
                 command_registry[reference] = {false, command_entry};
@@ -227,7 +222,6 @@ void MissionFileParser::parse_new_files() {
             parsed_missions.push_back(Mission(root,file_name));
             mission_files_not_yet_parsed.pop();
         } catch (const std::exception& e) {
-            // Temporary exception type, replace with custom exception
             throw std::runtime_error("Was on command \"" + reference + "\" and failed to parse mission file \"" + file_name + "\": " + e.what());
         }
     }
@@ -247,7 +241,7 @@ std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> MissionFileParser
             updated_registry[ref].second->set_next(updated_registry[next["ref"]].second);
         } else {
             // TODO: better error handling
-            fprintf(stderr, "Uh oh, bad tree! You defined a node twice. Don't do that!\n");
+            throw("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
         }
     }
     if (failure != nullptr) {
@@ -257,7 +251,7 @@ std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> MissionFileParser
             updated_registry[failure["ref"]].first = true;
             updated_registry[ref].second->set_failure(updated_registry[failure["ref"]].second);
         } else {
-            fprintf(stderr, "Uh oh, bad tree! You defined a node twice. Don't do that!\n");
+            throw("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
         }
     }
     return updated_registry;
@@ -288,18 +282,36 @@ std::unique_ptr<custom_interfaces::msg::Pose6DMask> MissionFileParser::make_wayp
 std::unique_ptr<custom_interfaces::msg::Tolerance6D> MissionFileParser::make_tolerance(json parameters_field) {
     auto tolerance = std::make_unique<custom_interfaces::msg::Tolerance6D>();
     tolerance->x = parameters_field["x"];
+    if (tolerance->x == 0) {
+        tolerance->x = 0.2;
+    }
     tolerance->y = parameters_field["y"];
+    if (tolerance->y == 0) {
+        tolerance->y = 0.2;
+    }
     tolerance->z = parameters_field["z"];
+    if (tolerance->z == 0) {
+        tolerance->z = 0.2;
+    }
     tolerance->roll = parameters_field["roll"];
+    if (tolerance->roll == 0) {
+        tolerance->roll = 0.1;
+    }
     tolerance->pitch = parameters_field["pitch"];
+    if (tolerance->pitch == 0) {
+        tolerance->pitch = 0.1;
+    }
     tolerance->yaw = parameters_field["yaw"];
+    if (tolerance->yaw == 0) {
+        tolerance->yaw = 0.1;
+    }
     return tolerance;
 }
 
 std::array<uint8_t,16> MissionFileParser::string_to_array(std::string string) {
     std::array<uint8_t,16> array = {0};
     if (string.size() > 16) {
-        fprintf(stderr, "Object ID too long! Unable to parse, returning empty.");
+        throw("Object ID too long! Unable to parse, returning empty.\n");
         return array;
     }
     for (int i = 0; i < 16; i++) {

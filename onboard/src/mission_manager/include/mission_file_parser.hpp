@@ -21,11 +21,11 @@ private:
 
 class MissionFileParser {
 public:
-    MissionFileParser();
+    MissionFileParser(std::string mission_folder_path = "onboard/src/mission_manager/mission_files/");
 
     virtual void add_file_to_parse(std::string file_name);
-    virtual void parse_mission_list_file(std::string file_name);
-    virtual void parse_always_run_file();
+    virtual void add_from_mission_list_file(std::string file_name);
+    virtual void add_from_always_run_file();
     virtual void parse_new_files();
     virtual void parse_all_files();
     virtual void reset_to_first_mission();
@@ -48,6 +48,7 @@ protected:
     std::queue<std::string> mission_files_not_yet_parsed;
     std::vector<Mission> parsed_missions;
     uint8_t next_mission_index;
+    std::string mission_folder_path;
 };
 
 #endif // MISSION_FILE_PARSER_HPP
