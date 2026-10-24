@@ -2,7 +2,10 @@
 
 using namespace std::chrono_literals;
 
-SimpleBMS::SimpleBMS(std::unique_ptr<FD_Interface> pico_fd) : Node("simple_bms") {
+SimpleBMS::SimpleBMS(std::unique_ptr<FD_Interface> pico_fd) :
+Node("simple_bms"),
+bms_fd(std::move(bms_fd)) 
+{
     if (init_i2c()){
         // Timer to check voltage & current values at a frequency of 100 hz
         battery_timer = this->create_wall_timer(20ms, std::bind(&SimpleBMS::bms_callback, this)); // This has been changed to 20ms from 10ms since it needs to wait 10ms in between reading the voltage and the current
@@ -35,7 +38,6 @@ bool SimpleBMS::init_i2c() {
         std::cout << "error: Failed to connect" << std::endl;
         return false;
     }
-    
     return config_i2c(VOLTAGE_CONFIG);
     
 }
@@ -46,7 +48,7 @@ bool SimpleBMS::config_i2c(SimpleBMS::ConfigValues conf){
     config[1] = conf.lsb;
     config[2] = conf.msb;
 
-    if (write(i2c_fd, config, 3) != 3) {
+    if (write(bms_fd->get_write_fd(), config, 3) != 3) {
         std::cout << "error: Could not write to config" << std::endl;
         return false;
     }
@@ -56,7 +58,7 @@ bool SimpleBMS::config_i2c(SimpleBMS::ConfigValues conf){
 
     // read from conversion register
     uint8_t conv_reg[1] = {conf.conv_reg_val};
-    if (write(i2c_fd, conv_reg, 1) != 1) {
+    if (write(bms_fd->get_write_fd(), conv_reg, 1) != 1) {
         std::cerr << "error: Failed to set pointer to conversion register" << std::endl;
         return false;
     }
@@ -89,7 +91,7 @@ float SimpleBMS::readBMS(bool isVoltage) {
     // Get reading from sensor. This will either be Voltage on pin A0 or current on pin A1, depending on how it was configured before this function was called
 
     uint8_t output[2];
-    if (read(i2c_fd, output, 2) != 2) {
+    if (read(bms_fd->get_read_fd(), output, 2) != 2) {
         std::cout << "Error: Could not read from conversion register" << std::endl;
         return 0.0f;
     }
@@ -103,6 +105,17 @@ void SimpleBMS::publish_bms(SimpleBMS::BatteryStatus status) {
     bms.voltage = status.voltage;
     bms.current = status.current;
     this->bms_publisher->publish(std::make_unique<custom_interfaces::msg::Battery>(bms));
+}
+
+ADC_FD::ADC_FD (std::string path) : Path_FD(path) {
+    fd = open_file();
+}
+
+int ADC_FD::open_file() {
+    if ((fd = open(path.c_str(), O_RDWR)) == -1) {
+        return -1;
+    }
+    return 1;
 }
 
 #ifndef ENABLE_TESTING

@@ -17,7 +17,7 @@ protected:
     std::shared_ptr<SimpleBMS> node;
     int write_pipe_fds[2];  // For when BMS needs to write to the . [0] = read end, [1] = write end
     int read_pipe_fds[2];  // For when BMS needs to read from the . [0] = read end, [1] = write end
-
+    
     void SetUp() override {
         // Initialize ROS2
         if (!rclcpp::ok()) {
