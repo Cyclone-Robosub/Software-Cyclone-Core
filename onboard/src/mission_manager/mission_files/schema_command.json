@@ -1,0 +1,22 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "cyclone-command",
+    "title": "Command",
+    "description": "A command definition",
+    "type": "object",
+    "properties": {
+        "reference": {"type": "string"},
+        "action": {
+            "enum": [
+                "drive_to_world_waypoint",
+                "drive_to_world_waypoint_seeking",
+                "idle",
+                "track_object_waypoint",
+                "duration_trick",
+                "distance_trick"
+            ]
+        },
+        "parameters": {"type": "object"}
+    },
+    "required": ["reference", "action", "parameters"]
+}
