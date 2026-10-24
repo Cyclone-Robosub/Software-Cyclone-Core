@@ -15,8 +15,12 @@
 #include "custom_interfaces/msg/pwms.hpp"
 #include "custom_interfaces/msg/vr.hpp"
 #include "custom_interfaces/msg/drr.hpp"
+<<<<<<< HEAD
 #include "custom_interfaces/msg/debug_flag.hpp"
 #include "custom_interfaces/msg/debug_state.hpp"
+=======
+#include "custom_interfaces/msg/debug.hpp"
+>>>>>>> f3f49ae (Data logging improvements (#140))
 #include "custom_interfaces/msg/mission_status.hpp"
 #include "custom_interfaces/srv/control_mode.hpp"
 
@@ -58,6 +62,14 @@ struct Mission_Status {
     double seconds_remaining = 0;
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
 };
+
+typedef struct mission_status {
+    char current_mission_file[33] = {0} ;
+    char current_command[33] = {0};
+    double duration_seconds = 0;
+    double seconds_remaining = 0;
+    std::chrono::time_point<std::chrono::steady_clock> timestamp;
+} Mission_Status;
 
 class Dashboard_TUI : public TUI_Interface {
     public:
