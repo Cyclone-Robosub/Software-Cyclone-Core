@@ -241,7 +241,7 @@ void Dashboard::matlab_debug_actual_pt_received_callback(custom_interfaces::msg:
     debug_angular_velocity.x = msg->angular_velocity.x; // p
     debug_angular_velocity.y = msg->angular_velocity.y; // q
     debug_angular_velocity.z = msg->angular_velocity.z; // r
-    debug_velocity.timestamp = std::chrono::steady_clock::now(); 
+    debug_angular_velocity.timestamp = std::chrono::steady_clock::now(); 
 }
 
 void Dashboard::matlab_debug_set_pt_received_callback(custom_interfaces::msg::DebugState::UniquePtr msg) {
@@ -263,7 +263,7 @@ void Dashboard::matlab_debug_set_pt_received_callback(custom_interfaces::msg::De
     debug_angular_velocity_setpt.x = msg->angular_velocity.x; // p
     debug_angular_velocity_setpt.y = msg->angular_velocity.y; // q
     debug_angular_velocity_setpt.z = msg->angular_velocity.z; // r
-    debug_velocity_setpt.timestamp = std::chrono::steady_clock::now();
+    debug_angular_velocity_setpt.timestamp = std::chrono::steady_clock::now();
 }
 
 void Dashboard::mission_status_received_callback(custom_interfaces::msg::MissionStatus::UniquePtr status_msg) {
