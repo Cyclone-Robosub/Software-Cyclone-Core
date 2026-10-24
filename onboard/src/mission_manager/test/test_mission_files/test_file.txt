@@ -1,5 +1,5 @@
 # This file exists for test_mission_manager to test mission_list functions
 
-sample_mission_file.json
+test_sample_mission_file.json
 
-sample_mission_file_2.json
+test_sample_mission_file_2.json

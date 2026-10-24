@@ -18,8 +18,8 @@ std::string Mission::get_name() {
     return name;
 }
 
-MissionFileParser::MissionFileParser() {
-    // intentionally blank
+MissionFileParser::MissionFileParser(std::string mission_folder_path) : mission_folder_path(mission_folder_path) {
+    // Intentionally left blank
 }
 
 void MissionFileParser::add_file_to_parse(std::string file_name) {
@@ -27,9 +27,9 @@ void MissionFileParser::add_file_to_parse(std::string file_name) {
     registered_mission_files.push(file_name);
 }
 
-void MissionFileParser::parse_mission_list_file(std::string file_name) {
+void MissionFileParser::add_from_mission_list_file(std::string file_name) {
     // TODO: more robust path handling
-    auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
+    auto file = std::ifstream(mission_folder_path + file_name);
     if (!file.good()) {
         fprintf(stderr, "Mission list '%s' not recognized!\n", file_name.c_str());
         throw std::invalid_argument("Mission list not recognized");
@@ -41,8 +41,8 @@ void MissionFileParser::parse_mission_list_file(std::string file_name) {
     }
 }
 
-void MissionFileParser::parse_always_run_file() {
-    parse_mission_list_file("always_run.txt");
+void MissionFileParser::add_from_always_run_file() {
+    add_from_mission_list_file("always_run.txt");
 }
 
 void MissionFileParser::parse_all_files() {
@@ -121,7 +121,7 @@ void MissionFileParser::parse_new_files() {
     while (!mission_files_not_yet_parsed.empty()) {
         file_name = mission_files_not_yet_parsed.front();
         // TODO: more robust path handling
-        auto file = std::ifstream("onboard/src/mission_manager/mission_files/" + file_name);
+        auto file = std::ifstream(mission_folder_path + file_name);
         if (!file.good()) {
             fprintf(stderr, "Mission file '%s' not recognized!\n", file_name.c_str());
             throw std::invalid_argument("Mission file not recognized");
