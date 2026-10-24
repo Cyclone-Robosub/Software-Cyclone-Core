@@ -241,7 +241,7 @@ std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> MissionFileParser
             updated_registry[ref].second->set_next(updated_registry[next["ref"]].second);
         } else {
             // TODO: better error handling
-            throw("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
+            throw std::runtime_error("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
         }
     }
     if (failure != nullptr) {
@@ -251,7 +251,7 @@ std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> MissionFileParser
             updated_registry[failure["ref"]].first = true;
             updated_registry[ref].second->set_failure(updated_registry[failure["ref"]].second);
         } else {
-            throw("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
+            throw std::runtime_error("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
         }
     }
     return updated_registry;
@@ -311,7 +311,7 @@ std::unique_ptr<custom_interfaces::msg::Tolerance6D> MissionFileParser::make_tol
 std::array<uint8_t,16> MissionFileParser::string_to_array(std::string string) {
     std::array<uint8_t,16> array = {0};
     if (string.size() > 16) {
-        throw("Object ID too long! Unable to parse, returning empty.\n");
+        throw std::runtime_error("Object ID too long! Unable to parse, returning empty.\n");
         return array;
     }
     for (int i = 0; i < 16; i++) {
