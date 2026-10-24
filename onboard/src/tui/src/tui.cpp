@@ -530,13 +530,12 @@ void Dashboard_TUI::display_status_with_colour(bool heartbeat, const int col_num
 }
 
 void Dashboard_TUI::display_blue_if_stale(std::chrono::time_point<std::chrono::steady_clock> timestamp, std::string message){
-    fflush(stdout);
     if (fresh_evaluation_time - timestamp < 0.5s) {
         write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
-        fflush(stdout);
     }
     printf("%s", message.c_str());
-    write(STDOUT_FILENO, "\x1B[39;22m", 8);
+    fflush(stdout);
+    write(STDOUT_FILENO, "\x1B[39;22m", 8); // unset bold, blue
     fflush(stdout);
 }
 
@@ -587,7 +586,7 @@ void Dashboard_TUI::display_ready(const int col_number) {
 
 
 /* Note: this function returns cursor to its original position so sub-columns can be next to each other */
-void Dashboard_TUI::display_pwms(std::array<int,8> pwms, const int col_number, bool fresh) {
+void Dashboard_TUI::display_pwms(std::array<int,8> pwms, const int col_number, std::chrono::time_point<std::chrono::steady_clock> timestamp) {
     write(STDOUT_FILENO, "\x1B[s", 3); // Save cursor position
     printf("\n");
     if (pwms[0] == 0) { // no pwms to display
@@ -601,14 +600,10 @@ void Dashboard_TUI::display_pwms(std::array<int,8> pwms, const int col_number, b
     for (int i = 0; i < 8; i++) {
         jump_to_column(col_number);
         printf("| ");
-        fflush(stdout);
-        if (fresh) {
-            write(STDOUT_FILENO, "\x1B[1;94m", 7); // set bold, blue
-        }
-        printf("%d\n", pwms[i]);
-        if (fresh) {
-            write(STDOUT_FILENO, "\x1B[39;22m", 8); // unset bold, blue
-        }
+        char buf[32] = {0};
+        snprintf(buf, 32, "%d", pwms[i]);
+        display_blue_if_stale(timestamp, std::string(buf));
+        printf("\n");
     }
     write(STDOUT_FILENO, "\x1B[u", 3); // Restore cursor position
 }
@@ -622,16 +617,16 @@ void Dashboard_TUI::fill_right_col(const int col_number) {
 
 void Dashboard_TUI::display_all_pwms(PWM_Data pwms_cmd, PWM_Data pwms_cli, PWM_Data pwms_ctrl, PWM_Data pwms_echo) {
     printf("| - CMD - ");
-    display_pwms(pwms_cmd.pwms, col_2, std::chrono::steady_clock::now() - pwms_cmd.timestamp < 0.5s);
+    display_pwms(pwms_cmd.pwms, col_2, pwms_cmd.timestamp);
     jump_to_column(col_2_1);
     printf("| - CLI - ");
-    display_pwms(pwms_cli.pwms, col_2_1, std::chrono::steady_clock::now() - pwms_cli.timestamp < 0.5s);
+    display_pwms(pwms_cli.pwms, col_2_1, pwms_cli.timestamp);
     jump_to_column(col_2_2);
     printf("| - CTRL - ");
-    display_pwms(pwms_ctrl.pwms, col_2_2, std::chrono::steady_clock::now() - pwms_ctrl.timestamp < 0.5s);
+    display_pwms(pwms_ctrl.pwms, col_2_2, pwms_ctrl.timestamp);
     jump_to_column(col_2_3);
     printf("| - ECHO - |");
-    display_pwms(pwms_echo.pwms, col_2_3, std::chrono::steady_clock::now() - pwms_echo.timestamp < 0.5s);
+    display_pwms(pwms_echo.pwms, col_2_3, pwms_echo.timestamp);
     fill_right_col(col_2_4);
 }
 

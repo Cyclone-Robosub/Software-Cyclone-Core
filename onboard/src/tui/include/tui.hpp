@@ -79,7 +79,7 @@ class Dashboard_TUI : public TUI_Interface {
         void display_escalatable_warning_status(int current_mode, int warning_mode, bool heartbeat, const int col_number);
         void display_mission_manager(int current_mux_mode, int warning_mode, bool heartbeat, bool ready, const int col_number);
         void display_ready(const int col_number);
-        void display_pwms(std::array<int,8> pwms, const int col_number, bool fresh);
+        void display_pwms(std::array<int,8> pwms, const int col_number, std::chrono::time_point<std::chrono::steady_clock> timestamp);
         void fill_right_col(const int col_number);
         void display_all_pwms(PWM_Data pwms_cmd, PWM_Data pwms_cli, PWM_Data pwms_ctrl, PWM_Data pwms_echo);
         void display_connection_info(bool connection_ok, double seconds_since_ping, double ping_rtt, const int col_number);
