@@ -18,24 +18,24 @@ Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
     events_fd(std::move(events_fd))
      {
     drr_subscription = this->create_subscription<custom_interfaces::msg::DRR>(
-        "dead_reck_report", 10, 
+        "dead_reck_report", 1, 
         std::bind(&Data_Logger::dead_reck_report_received_callback, this, std::placeholders::_1));
     vr_subscription = this->create_subscription<custom_interfaces::msg::VR>(
-        "velocity_report", 10, 
+        "velocity_report", 1, 
         std::bind(&Data_Logger::velocity_report_received_callback, this, std::placeholders::_1));
     imu_subscription = this->create_subscription<custom_interfaces::msg::Imu>(
-        "imu_custom", 10,
+        "imu_custom", 1,
         std::bind(&Data_Logger::imu_data_received_callback, this, std::placeholders::_1));
     pwm_subscription = this->create_subscription<custom_interfaces::msg::Pwms>(
-        "pwm_cmd", 10,
+        "pwm_cmd", 1,
         std::bind(&Data_Logger::pwm_data_received_callback, this, std::placeholders::_1)
     );
     go_signal_subscription = this->create_subscription<std_msgs::msg::Bool>(
-        "go_signal", 10,
+        "go_signal", 1,
         std::bind(&Data_Logger::go_signal_received_callback, this, std::placeholders::_1)
     );
     mission_manager_command_subscription = this->create_subscription<custom_interfaces::msg::Command>(
-        "current_command", 10,
+        "current_command", 1,
         std::bind(&Data_Logger::command_received_callback, this, std::placeholders::_1)
     );
     // TODO: any additional sensors added in the future, manipulator/dropper commands
