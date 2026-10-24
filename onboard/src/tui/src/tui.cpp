@@ -233,14 +233,14 @@ void Dashboard::matlab_debug_actual_pt_received_callback(custom_interfaces::msg:
     debug_orientation.z = msg->orientation.z; // yaw
     debug_orientation.timestamp = std::chrono::steady_clock::now();
 
-    debug_velocity.x = msg->angle_rate.x; // vx
-    debug_velocity.y = msg->angle_rate.y; // vy
-    debug_velocity.z = msg->angle_rate.z; // vz
+    debug_velocity.x = msg->velocity.x; // vx
+    debug_velocity.y = msg->velocity.y; // vy
+    debug_velocity.z = msg->velocity.z; // vz
     debug_velocity.timestamp = std::chrono::steady_clock::now();
 
-    debug_angular_velocity.x = msg->angle_velocity.x; // p
-    debug_angular_velocity.y = msg->angle_velocity.y; // q
-    debug_angular_velocity.z = msg->angle_velocity.z; // r
+    debug_angular_velocity.x = msg->angular_velocity.x; // p
+    debug_angular_velocity.y = msg->angular_velocity.y; // q
+    debug_angular_velocity.z = msg->angular_velocity.z; // r
     debug_velocity.timestamp = std::chrono::steady_clock::now(); 
 }
 
@@ -255,14 +255,14 @@ void Dashboard::matlab_debug_set_pt_received_callback(custom_interfaces::msg::De
     debug_orientation_setpt.z = msg->orientation.z; // yaw
     debug_orientation_setpt.timestamp = std::chrono::steady_clock::now();
 
-    debug_velocity_setpt.x = msg->angle_rate.x; // vx
-    debug_velocity_setpt.y = msg->angle_rate.y; // vy
-    debug_velocity_setpt.z = msg->angle_rate.z; // vz
+    debug_velocity_setpt.x = msg->velocity.x; // vx
+    debug_velocity_setpt.y = msg->velocity.y; // vy
+    debug_velocity_setpt.z = msg->velocity.z; // vz
     debug_velocity_setpt.timestamp = std::chrono::steady_clock::now();
 
-    debug_angular_velocity_setpt.x = msg->angle_velocity.x; // p
-    debug_angular_velocity_setpt.y = msg->angle_velocity.y; // q
-    debug_angular_velocity_setpt.z = msg->angle_velocity.z; // r
+    debug_angular_velocity_setpt.x = msg->angular_velocity.x; // p
+    debug_angular_velocity_setpt.y = msg->angular_velocity.y; // q
+    debug_angular_velocity_setpt.z = msg->angular_velocity.z; // r
     debug_velocity_setpt.timestamp = std::chrono::steady_clock::now();
 }
 
