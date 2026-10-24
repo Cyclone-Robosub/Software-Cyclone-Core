@@ -3,5 +3,5 @@
 
 geometry_msgs/Vector3 position
 geometry_msgs/Vector3 orientation
-geometry_msgs/Vector3 angle_rate
-geometry_msgs/Vector3 angle_velocity
+geometry_msgs/Vector3 velocity
+geometry_msgs/Vector3 angular_velocity

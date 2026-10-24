@@ -233,15 +233,15 @@ void Dashboard::matlab_debug_actual_pt_received_callback(custom_interfaces::msg:
     debug_orientation.z = msg->orientation.z; // yaw
     debug_orientation.timestamp = std::chrono::steady_clock::now();
 
-    debug_angle_rate.x = msg->angle_rate.x; // vx
-    debug_angle_rate.y = msg->angle_rate.y; // vy
-    debug_angle_rate.z = msg->angle_rate.z; // vz
-    debug_angle_rate.timestamp = std::chrono::steady_clock::now();
+    debug_velocity.x = msg->angle_rate.x; // vx
+    debug_velocity.y = msg->angle_rate.y; // vy
+    debug_velocity.z = msg->angle_rate.z; // vz
+    debug_velocity.timestamp = std::chrono::steady_clock::now();
 
-    debug_angle_velocity.x = msg->angle_velocity.x; // p
-    debug_angle_velocity.y = msg->angle_velocity.y; // q
-    debug_angle_velocity.z = msg->angle_velocity.z; // r
-    debug_angle_rate.timestamp = std::chrono::steady_clock::now(); 
+    debug_angular_velocity.x = msg->angle_velocity.x; // p
+    debug_angular_velocity.y = msg->angle_velocity.y; // q
+    debug_angular_velocity.z = msg->angle_velocity.z; // r
+    debug_velocity.timestamp = std::chrono::steady_clock::now(); 
 }
 
 void Dashboard::matlab_debug_set_pt_received_callback(custom_interfaces::msg::DebugState::UniquePtr msg) {
@@ -255,15 +255,15 @@ void Dashboard::matlab_debug_set_pt_received_callback(custom_interfaces::msg::De
     debug_orientation_setpt.z = msg->orientation.z; // yaw
     debug_orientation_setpt.timestamp = std::chrono::steady_clock::now();
 
-    debug_angle_rate_setpt.x = msg->angle_rate.x; // vx
-    debug_angle_rate_setpt.y = msg->angle_rate.y; // vy
-    debug_angle_rate_setpt.z = msg->angle_rate.z; // vz
-    debug_angle_rate_setpt.timestamp = std::chrono::steady_clock::now();
+    debug_velocity_setpt.x = msg->angle_rate.x; // vx
+    debug_velocity_setpt.y = msg->angle_rate.y; // vy
+    debug_velocity_setpt.z = msg->angle_rate.z; // vz
+    debug_velocity_setpt.timestamp = std::chrono::steady_clock::now();
 
-    debug_angle_velocity_setpt.x = msg->angle_velocity.x; // p
-    debug_angle_velocity_setpt.y = msg->angle_velocity.y; // q
-    debug_angle_velocity_setpt.z = msg->angle_velocity.z; // r
-    debug_angle_rate_setpt.timestamp = std::chrono::steady_clock::now();
+    debug_angular_velocity_setpt.x = msg->angle_velocity.x; // p
+    debug_angular_velocity_setpt.y = msg->angle_velocity.y; // q
+    debug_angular_velocity_setpt.z = msg->angle_velocity.z; // r
+    debug_velocity_setpt.timestamp = std::chrono::steady_clock::now();
 }
 
 void Dashboard::mission_status_received_callback(custom_interfaces::msg::MissionStatus::UniquePtr status_msg) {
@@ -448,12 +448,12 @@ void Dashboard::refresh_display() {
                              debug_flag_2,
                              debug_position,
                              debug_orientation,
-                             debug_angle_rate,
-                             debug_angle_velocity,
+                             debug_velocity,
+                             debug_angular_velocity,
                              debug_position_setpt,
                              debug_orientation_setpt,
-                             debug_angle_rate_setpt,
-                             debug_angle_velocity_setpt,
+                             debug_velocity_setpt,
+                             debug_angular_velocity_setpt,
                              ping_ok,
                              rtt,
                              seconds_since_ping,
@@ -797,10 +797,10 @@ void Dashboard_TUI::display_debug(
     }
 
     std::unique_ptr<std::string[]> states(new std::string[]{
-        "x", "y", "z", 
+        "xi", "yi", "zi", 
         "roll", "pitch", "yaw",
-        "vx", "vy", "vz",
-        "p", "q", "r"});
+        "vbx", "vby", "vbz",
+        "wbx", "wby", "wbz"});
     
     printf("\n");
     jump_to_column(col_number + 9);
@@ -888,13 +888,13 @@ void Dashboard_TUI::display_tui(va_list args) {
 
     Debug_State_Data debug_position = va_arg(args, Debug_State_Data);
     Debug_State_Data debug_orientation = va_arg(args, Debug_State_Data);
-    Debug_State_Data debug_angle_rate = va_arg(args, Debug_State_Data);
-    Debug_State_Data debug_angle_velocity = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_velocity = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_angular_velocity = va_arg(args, Debug_State_Data);
 
     Debug_State_Data debug_position_setpt = va_arg(args, Debug_State_Data);
     Debug_State_Data debug_orientation_setpt = va_arg(args, Debug_State_Data);
-    Debug_State_Data debug_angle_rate_setpt = va_arg(args, Debug_State_Data);
-    Debug_State_Data debug_angle_velocity_setpt = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_velocity_setpt = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_angular_velocity_setpt = va_arg(args, Debug_State_Data);
 
     bool ping_ok = (bool)va_arg(args, int);
     double ping_rtt = va_arg(args, double);
@@ -904,8 +904,8 @@ void Dashboard_TUI::display_tui(va_list args) {
     
     int num_flags = 3;
     Debug_Flag_Msg debug_flags[3] = {debug_flag_0, debug_flag_1, debug_flag_2};
-    Debug_State_Data debug_states_actual[4] = {debug_position, debug_orientation, debug_angle_rate, debug_angle_velocity};
-    Debug_State_Data debug_states_setpt[4] = {debug_position_setpt, debug_orientation_setpt, debug_angle_rate_setpt, debug_angle_velocity_setpt};
+    Debug_State_Data debug_states_actual[4] = {debug_position, debug_orientation, debug_velocity, debug_angular_velocity};
+    Debug_State_Data debug_states_setpt[4] = {debug_position_setpt, debug_orientation_setpt, debug_velocity_setpt, debug_angular_velocity_setpt};
     fresh_evaluation_time = std::chrono::steady_clock::now();
 
     write(STDOUT_FILENO, "\x1B[?25l", 6); // invisible cursor

@@ -205,13 +205,13 @@ private:
     
     Debug_State_Data debug_position;
     Debug_State_Data debug_orientation;
-    Debug_State_Data debug_angle_rate;
-    Debug_State_Data debug_angle_velocity;
+    Debug_State_Data debug_velocity;
+    Debug_State_Data debug_angular_velocity;
 
     Debug_State_Data debug_position_setpt;
     Debug_State_Data debug_orientation_setpt;
-    Debug_State_Data debug_angle_rate_setpt;
-    Debug_State_Data debug_angle_velocity_setpt;
+    Debug_State_Data debug_velocity_setpt;
+    Debug_State_Data debug_angular_velocity_setpt;
 
     Mission_Status status;
 
