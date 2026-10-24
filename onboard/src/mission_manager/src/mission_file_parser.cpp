@@ -282,11 +282,29 @@ std::unique_ptr<custom_interfaces::msg::Pose6DMask> MissionFileParser::make_wayp
 std::unique_ptr<custom_interfaces::msg::Tolerance6D> MissionFileParser::make_tolerance(json parameters_field) {
     auto tolerance = std::make_unique<custom_interfaces::msg::Tolerance6D>();
     tolerance->x = parameters_field["x"];
+    if (tolerance->x == 0) {
+        tolerance->x = 0.2;
+    }
     tolerance->y = parameters_field["y"];
+    if (tolerance->y == 0) {
+        tolerance->y = 0.2;
+    }
     tolerance->z = parameters_field["z"];
+    if (tolerance->z == 0) {
+        tolerance->z = 0.2;
+    }
     tolerance->roll = parameters_field["roll"];
+    if (tolerance->roll == 0) {
+        tolerance->roll = 0.1;
+    }
     tolerance->pitch = parameters_field["pitch"];
+    if (tolerance->pitch == 0) {
+        tolerance->pitch = 0.1;
+    }
     tolerance->yaw = parameters_field["yaw"];
+    if (tolerance->yaw == 0) {
+        tolerance->yaw = 0.1;
+    }
     return tolerance;
 }
 
