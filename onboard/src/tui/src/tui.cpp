@@ -530,13 +530,13 @@ void Dashboard_TUI::display_status_with_colour(bool heartbeat, const int col_num
 }
 
 void Dashboard_TUI::display_blue_if_stale(std::chrono::time_point<std::chrono::steady_clock> timestamp, std::string message){
+    fflush(stdout);
     if (fresh_evaluation_time - timestamp < 0.5s) {
         write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
     }
     printf("%s", message.c_str());
     fflush(stdout);
     write(STDOUT_FILENO, "\x1B[39;22m", 8); // unset bold, blue
-    fflush(stdout);
 }
 
 void Dashboard_TUI::display_warning_status(bool heartbeat, const int col_number) {
@@ -655,60 +655,37 @@ std::string Dashboard_TUI::format_floating_point(double coordinate) {
 
 void Dashboard_TUI::display_vr(const int col_number, DVL_VR_Data velocity) {
     jump_to_column(col_number);
-    std::string fresh = dvl_fresh(velocity);
-    std::string clear = "\x1B[39;22m";
-    printf("Velocity:    | x: %s", fresh.c_str());
-    printf("%s", format_floating_point(velocity.x).c_str());
-    printf("%s | y: %s", clear.c_str(), fresh.c_str());
-    printf("%s", format_floating_point(velocity.y).c_str());
-    printf("%s | z: %s", clear.c_str(), fresh.c_str());
-    printf("%s", format_floating_point(velocity.z).c_str());
-    printf("%s | alt: %s", clear.c_str(), fresh.c_str());
-    printf("%s", format_floating_point(velocity.altitude).c_str());
-    printf("%s |\n", clear.c_str());
+    printf("Velocity:    | x: ");
+    display_blue_if_stale(velocity.timestamp, format_floating_point(velocity.x));
+    printf(" | y: ");
+    display_blue_if_stale(velocity.timestamp, format_floating_point(velocity.y));
+    printf(" | z: ");
+    display_blue_if_stale(velocity.timestamp, format_floating_point(velocity.z));
+    printf(" | alt: ");
+    display_blue_if_stale(velocity.timestamp, format_floating_point(velocity.altitude));
+    printf(" |\n");
 }
 
 
 void Dashboard_TUI::display_drr(const int col_number, DVL_Data position, DVL_Data orientation) {
     jump_to_column(col_number);
-    std::string position_fresh = dvl_fresh(position);
-    std::string orientation_fresh = dvl_fresh(orientation);
-    std::string clear = "\x1B[39;22m";
 
-    printf("Position:    | x: %s", position_fresh.c_str());
-    printf("%s", format_floating_point(position.x).c_str());
-    printf("%s | y: %s", clear.c_str(), position_fresh.c_str());
-    printf("%s", format_floating_point(position.y).c_str());
-    printf("%s | z: %s", clear.c_str(), position_fresh.c_str());
-    printf("%s", format_floating_point(position.z).c_str());
-    printf("%s |\n", clear.c_str());
+    printf("Position:    | x: ");
+    display_blue_if_stale(position.timestamp, format_floating_point(position.x));
+    printf(" | y: ");
+    display_blue_if_stale(position.timestamp, format_floating_point(position.y));
+    printf(" | z: ");
+    display_blue_if_stale(position.timestamp, format_floating_point(position.z));
+    printf(" |\n");
 
     jump_to_column(col_number);
-    printf("Orientation: | x: %s", orientation_fresh.c_str());
-    printf("%s", format_floating_point(orientation.x).c_str());
-    printf("%s | y: %s", clear.c_str(), orientation_fresh.c_str());
-    printf("%s", format_floating_point(orientation.y).c_str());
-    printf("%s | z: %s", clear.c_str(), orientation_fresh.c_str());
-    printf("%s", format_floating_point(orientation.z).c_str());
-    printf("%s |\n", clear.c_str());
-}
-
-std::string Dashboard_TUI::dvl_fresh(DVL_Data dvl_data) {
-    if (fresh_evaluation_time - dvl_data.timestamp < 0.5s) {
-        return "\x1B[1;94m"; // bold, blue
-    }
-    else {
-        return "";
-    }
-}
-
-std::string Dashboard_TUI::pwm_fresh(PWM_Data pwm_data) {
-    if (fresh_evaluation_time - pwm_data.timestamp < 0.5s) {
-        return "\x1B[1;94m"; // bold, blue
-    }
-    else {
-        return "";
-    }
+    printf("Orientation: | x: ");
+    display_blue_if_stale(orientation.timestamp, format_floating_point(orientation.x));
+    printf(" | y: ");
+    display_blue_if_stale(orientation.timestamp, format_floating_point(orientation.y));
+    printf(" | z: ");
+    display_blue_if_stale(orientation.timestamp, format_floating_point(orientation.z));
+    printf(" |\n");
 }
 
 void Dashboard_TUI::display_commands() {
