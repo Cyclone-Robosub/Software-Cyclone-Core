@@ -1,9 +1,0 @@
-# This file exists for test_mission_manager to test mission_list functions
-
-sample_mission_file.json
-
-always_run.txt
-
-sample_mission_file_2.json
-
-garbage_file
