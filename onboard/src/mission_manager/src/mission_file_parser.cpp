@@ -226,6 +226,7 @@ void MissionFileParser::parse_new_files() {
                 } else {
                     throw std::runtime_error("Command name " + action + " does not match any known command\n");
                 }
+
                 command_registry[reference] = {false, command_entry};
             }
             json tree = mission_file_data["tree"];
