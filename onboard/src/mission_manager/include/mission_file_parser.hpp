@@ -43,7 +43,10 @@ protected:
     virtual std::unique_ptr<custom_interfaces::msg::Tolerance6D> make_tolerance(json parameters_field);
     virtual std::array<uint8_t,16> string_to_array(std::string string);
     virtual std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> parse_tree(json tree, std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> registry);
-
+    virtual void parse_global_definitions();
+    virtual std::shared_ptr<Command> make_command_copy(std::shared_ptr<Command> command_to_copy);
+    
+    std::map<std::string,std::shared_ptr<Command>> global_definitions;
     std::queue<std::string> registered_mission_files;
     std::queue<std::string> mission_files_not_yet_parsed;
     std::vector<Mission> parsed_missions;
