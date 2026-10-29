@@ -8,6 +8,9 @@
 #include "custom_interfaces/msg/command_result.hpp"
 #include "custom_interfaces/msg/mission_status.hpp"
 #include "custom_interfaces/srv/get_file.hpp"
+#include "custom_interfaces/srv/set_int.hpp"
+#include "custom_interfaces/srv/get_int.hpp"
+#include "custom_interfaces/srv/get_string.hpp"
 #include "robot_command.hpp"
 #include "mission_file_parser.hpp"
 #include <mutex>
@@ -52,11 +55,21 @@ private:
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr toggle_ready_service;
     /* On receive, force a publish of the current ready/unready state */
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr ready_pub_service;
-
-    /*Add given .json file to parsed mission files*/
+    /* Add given .json file to parsed mission files */
     rclcpp::Service<custom_interfaces::srv::GetFile>::SharedPtr add_mission_file;
-    /*Add all .json files in given .txt file to parsed mission files*/
+    /* Add all .json files in given .txt file to parsed mission files */
     rclcpp::Service<custom_interfaces::srv::GetFile>::SharedPtr add_mission_list;
+    
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reparse_all_files;
+
+    rclcpp::Service<custom_interfaces::srv::SetInt>::SharedPtr jump_to_mission;
+    
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_to_first_mission;
+
+    rclcpp::Service<custom_interfaces::srv::GetInt>::SharedPtr get_current_mission_index;
+
+    rclcpp::Service<custom_interfaces::srv::GetString>::SharedPtr get_current_mission_name;
+
 
     rclcpp::TimerBase::SharedPtr heartbeat_timer;
 

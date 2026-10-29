@@ -1,0 +1,5 @@
+# Uses large, signed int for maximum compatibility
+---
+int64 data
+bool success
+string message # Error message, if applicable (or other message)
