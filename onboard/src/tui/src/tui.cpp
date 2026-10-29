@@ -486,7 +486,9 @@ void Dashboard_TUI::refresh_display(int numArgs, ...) {
     va_start(args, numArgs);
 
     tcflush(STDIN_FILENO, TCIFLUSH);
+    
     display_tui(args);
+
     display_mutex.unlock();
 }
 
@@ -835,7 +837,7 @@ std::string Dashboard::get_ping() { // TODO: when robot looses connection ping h
     }
 }
 
-void Dashboard_TUI::display_tui(va_list args) {
+void Dashboard_TUI::display_window_1(va_list args) {
     int current_mux_mode = va_arg(args, int);
     bool thrust_interface_heartbeat = (bool)va_arg(args, int);
     bool mux_heartbeat = (bool)va_arg(args, int);
@@ -949,6 +951,133 @@ void Dashboard_TUI::display_tui(va_list args) {
     write(STDOUT_FILENO, "\x1B[0K", 4); // erase until end of line (removes backspaced characters)
 
     fflush(stdout);
+}
+
+void Dashboard_TUI::display_window_2(va_list args) {
+    int current_mux_mode = va_arg(args, int);
+    bool thrust_interface_heartbeat = (bool)va_arg(args, int);
+    bool mux_heartbeat = (bool)va_arg(args, int);
+    bool cli_heartbeat = (bool)va_arg(args, int);
+    bool ctrl_heartbeat = (bool)va_arg(args, int);
+    bool echo_heartbeat = (bool)va_arg(args, int);
+    bool dvl_heartbeat = (bool)va_arg(args, int);
+    bool joystick_heartbeat = (bool)va_arg(args, int);
+    bool mission_manager_heartbeat = (bool)va_arg(args, int);
+    PWM_Data pwms_cmd = va_arg(args, PWM_Data);
+    PWM_Data pwms_cli = va_arg(args, PWM_Data);
+    PWM_Data pwms_ctrl = va_arg(args, PWM_Data);
+    PWM_Data pwms_echo = va_arg(args, PWM_Data);
+    DVL_VR_Data velocity = va_arg(args, DVL_VR_Data);
+    DVL_Data position = va_arg(args, DVL_Data);
+    DVL_Data orientation = va_arg(args, DVL_Data);
+    Mission_Status status = va_arg(args, Mission_Status);
+
+    Debug_Flag_Msg debug_flag_0 = va_arg(args, Debug_Flag_Msg);
+    Debug_Flag_Msg debug_flag_1 = va_arg(args, Debug_Flag_Msg);
+    Debug_Flag_Msg debug_flag_2 = va_arg(args, Debug_Flag_Msg);
+
+    Debug_State_Data debug_position = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_orientation = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_velocity = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_angular_velocity = va_arg(args, Debug_State_Data);
+
+    Debug_State_Data debug_position_setpt = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_orientation_setpt = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_velocity_setpt = va_arg(args, Debug_State_Data);
+    Debug_State_Data debug_angular_velocity_setpt = va_arg(args, Debug_State_Data);
+
+    bool ping_ok = (bool)va_arg(args, int);
+    double ping_rtt = va_arg(args, double);
+    double seconds_since_ping = va_arg(args, double);
+    bool ready = (bool)va_arg(args, int);
+    va_end(args);
+    
+    int num_flags = 3;
+    Debug_Flag_Msg debug_flags[3] = {debug_flag_0, debug_flag_1, debug_flag_2};
+    Debug_State_Data debug_states_actual[4] = {debug_position, debug_orientation, debug_velocity, debug_angular_velocity};
+    Debug_State_Data debug_states_setpt[4] = {debug_position_setpt, debug_orientation_setpt, debug_velocity_setpt, debug_angular_velocity_setpt};
+    fresh_evaluation_time = std::chrono::steady_clock::now();
+
+    write(STDOUT_FILENO, "\x1B[?25l", 6); // invisible cursor
+    reset_cursor_pos();
+
+    write_header("thrust_interface", col_1);
+    display_critical_status(thrust_interface_heartbeat, col_1);
+    printf("\n");
+
+    write_header("soft_mux", col_1);
+    display_critical_status(mux_heartbeat, col_1);
+    printf("\n");
+
+    write_selectable_header("cli", current_mux_mode, 1, col_1);
+    display_escalatable_critical_status(current_mux_mode, 1, cli_heartbeat, col_1);
+    printf("\n");
+
+    write_selectable_header("ctrl", current_mux_mode, 2, col_1);
+    display_escalatable_critical_status(current_mux_mode, 2, ctrl_heartbeat, col_1);
+    printf("\n");
+
+    write_selectable_header("echo", current_mux_mode, 3, col_1);
+    display_escalatable_critical_status(current_mux_mode, 3, echo_heartbeat, col_1);
+    printf("\n");
+
+    write_header("dvl", col_1);
+    display_critical_status(dvl_heartbeat, col_1);
+    display_vr(col_1, velocity);
+    display_drr(col_1, position, orientation);
+    printf("\n");
+
+    write_header("Robot Connection Status", col_1);
+    display_connection_info(ping_ok, seconds_since_ping, ping_rtt, col_1);
+
+    printf("\n");
+    printf("Systems in flashing red are critical and should be fixed immediately.\n");
+    printf("Systems in flashing orange might be critical and should be fixed if needed.\n");
+    printf("Systems in flashing white are not connected, but are noncritical and can probably be ignored.\n");
+    printf("The current control mode is indicated by whether the mode is highlighted by = [mode] =.\n");
+    printf("Fresh PWM and DVL data is shown bolded in blue. After 0.5s it becomes stale and returns to normal.\n ");
+
+    display_commands();  
+    
+    reset_cursor_pos();
+
+    write_header("PWMs", col_2);
+    display_all_pwms(pwms_cmd, pwms_cli, pwms_ctrl, pwms_echo);
+    printf("\n");
+
+    write_header("Joystick", col_2);
+    display_escalatable_critical_status(current_mux_mode, 2, joystick_heartbeat, col_2);
+    printf("\n");
+
+    write_header("mission_manager", col_2);
+    display_mission_manager(current_mux_mode, 2, mission_manager_heartbeat, ready, col_2);
+
+    reset_cursor_pos();
+
+    write_header("Mission Status", col_3);
+    display_mission_status(col_3, status);
+    printf("\n");
+
+    write_header("Matlab Debug", col_3);
+    display_debug(col_3, num_flags, debug_flags, debug_states_actual, debug_states_setpt);
+
+    write(STDOUT_FILENO, "\x1B[38;29H", 8); // jumpt to prompt (line/column)
+    write(STDOUT_FILENO, "\x1B[?25h", 6); // visible cursor
+    printf("%s", current_input.c_str());
+    write(STDOUT_FILENO, "\x1B[0K", 4); // erase until end of line (removes backspaced characters)
+
+    fflush(stdout);
+}
+
+void Dashboard_TUI::display_tui(va_list args) {
+    switch (current_window) {
+        case Window::WINDOW_1:
+            display_window_1(args);
+            break;
+        case Window::WINDOW_2:
+            display_window_2(args);
+            break;
+    }
 }
 
 // TODO: Add voltage, ability to reset dvl drr and gyro, mission manager heartbeat

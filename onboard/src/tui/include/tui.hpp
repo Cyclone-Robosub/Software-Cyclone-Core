@@ -59,6 +59,10 @@ struct Mission_Status {
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
 };
 
+enum class Window {
+    WINDOW_1 = 1, WINDOW_2 = 2
+};
+
 class Dashboard_TUI : public TUI_Interface {
     public:
         explicit Dashboard_TUI() {};
@@ -88,6 +92,8 @@ class Dashboard_TUI : public TUI_Interface {
         void display_commands();
         void display_mission_status(const int col_number, Mission_Status status);
         void display_debug(const int col_number, int num_flags, Debug_Flag_Msg* flags, Debug_State_Data* actual_point, Debug_State_Data* set_point);
+        void display_window_1(va_list args);
+        void display_window_2(va_list args);
         std::string format_floating_point(double coordinate);
         std::chrono::time_point<std::chrono::steady_clock> fresh_evaluation_time;
         const int col_1 = 0;
@@ -98,6 +104,7 @@ class Dashboard_TUI : public TUI_Interface {
         const int col_2_4 = 77;
         const int col_3 = 88;
         int prev_debug_length = 256; // don't like this, but need a way to clean up old text...
+        Window current_window = Window::WINDOW_1;
 };
 
 class Dashboard : public rclcpp::Node {
