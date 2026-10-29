@@ -26,11 +26,14 @@ WEBPAGE_PANE=$(tmux split-window -h -t $JOYSTICK_PANE -P -F "#{pane_id}" "sleep 
 
 # --- Simple Joystick ---
 # ========= UNCOMMENT IF DESIRED =========
-# tmux split-window -v -t $WEBPAGE_PANE "ros2 run simple_joystick_controller Simple_Joystick_Controller; bash"
+tmux split-window -v -t $WEBPAGE_PANE "ros2 run simple_joystick_controller Simple_Joystick_Controller; bash"
 
 # Joystick telemetry
 # Sleep so that the webpage has loaded and the topic is being broadcast
-tmux split-window -v -t $JOYSTICK_PANE "sleep 2.5; ros2 topic echo /ps5_controller; bash"
+tmux split-window -v -t $JOYSTICK_PANE "sleep 5.5; ros2 topic echo /ps5_controller; bash"
+
+# Data logger
+tmux new-window -t $SESSION -n 'data_logger' -P -F "#{pane_id}" "ros2 run data_logger data_logger; bash"
 
 
 # Select the main window
