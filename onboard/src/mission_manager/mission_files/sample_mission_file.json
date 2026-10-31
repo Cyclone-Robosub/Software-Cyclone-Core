@@ -194,6 +194,10 @@
                 "hold_time": 0.0,
                 "timeout": 30
             }
+        },
+        {
+            "reference": "go_home",
+            "global_reference": "go_home_no_timeout"
         }
     ],
     "tree": {
@@ -205,7 +209,10 @@
                 "next": {
                     "ref": "idle_example",
                     "next": {
-                        "ref": "track_object_waypoint_example"
+                        "ref": "track_object_waypoint_example",
+                        "next": {
+                            "ref": "go_home"
+                        }
                     }
                 }
             },
