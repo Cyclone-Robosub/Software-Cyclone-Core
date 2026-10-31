@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "rclcpp/rclcpp.hpp"
+#include <filesystem>
 
 #include "mission_manager.hpp"
 #include "mission_file_parser.hpp"
@@ -57,10 +58,11 @@ TEST_F(TestParser, MissionList) {
         parser->add_from_mission_list_file("test_file.txt");
         parser->parse_new_files();
     } catch (const std::exception& e) {
+        std::cerr << e.what() << "\n";
+        std::cerr << "Current path: " << std::filesystem::current_path() << "\n";
         FAIL();
     }
 
-    // Seemingly getting segfaults from running parser->get_next_mission()
     auto root = parser->get_next_mission();
     EXPECT_EQ(parser->get_current_mission_name(), "test_sample_mission_file.json");
     root = parser->get_next_mission();
