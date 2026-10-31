@@ -19,6 +19,7 @@
 #include "custom_interfaces/msg/debug_state.hpp"
 #include "custom_interfaces/msg/mission_status.hpp"
 #include "custom_interfaces/srv/control_mode.hpp"
+#include "custom_interfaces/msg/gamepad.hpp"
 
 using namespace rclcpp;
 
@@ -125,6 +126,7 @@ private:
     rclcpp::Subscription<custom_interfaces::msg::Pwms>::SharedPtr pwm_echo_subscription;
     rclcpp::Subscription<custom_interfaces::msg::VR>::SharedPtr dvl_vr_subscription;
     rclcpp::Subscription<custom_interfaces::msg::DRR>::SharedPtr dvl_drr_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::Gamepad>::SharedPtr gamepad_subscription;
     rclcpp::Subscription<custom_interfaces::msg::MissionStatus>::SharedPtr mission_status_subscription;
     rclcpp::Subscription<custom_interfaces::msg::DebugFlag>::SharedPtr matlab_debug_flag_0_subscription;
     rclcpp::Subscription<custom_interfaces::msg::DebugFlag>::SharedPtr matlab_debug_flag_1_subscription;
@@ -149,6 +151,7 @@ private:
     void pwm_echo_callback(custom_interfaces::msg::Pwms::UniquePtr pwms);
     void dvl_vr_callback(custom_interfaces::msg::VR::UniquePtr vr);
     void dvl_drr_callback(custom_interfaces::msg::DRR::UniquePtr drr);
+    void gamepad_received_callback(custom_interfaces::msg::Gamepad::UniquePtr gamepad_msg);
     void mission_status_received_callback(custom_interfaces::msg::MissionStatus::UniquePtr status_msg);
     void matlab_debug_f0_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr message);
     void matlab_debug_f1_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr message);

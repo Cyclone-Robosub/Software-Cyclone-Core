@@ -40,6 +40,8 @@ Dashboard::Dashboard(std::unique_ptr<TUI_Interface> tui) : Node("tui"), tui(std:
         std::bind(&Dashboard::control_mode_callback, this, std::placeholders::_1));
     ready_status_subscription = this->create_subscription<std_msgs::msg::Bool>("current_ready_state", 10, 
         std::bind(&Dashboard::ready_status_callback, this, std::placeholders::_1));
+    gamepad_subscription = this->create_subscription<custom_interfaces::msg::Gamepad>("ps5_controller", 10,
+        std::bind(&Dashboard::gamepad_received_callback, this, std::placeholders::_1));
 
     // matlab debug
     matlab_debug_flag_0_subscription = this->create_subscription<custom_interfaces::msg::DebugFlag>("matlab_debug_flag_0", 10,
@@ -198,6 +200,22 @@ void Dashboard::dvl_drr_callback(custom_interfaces::msg::DRR::UniquePtr drr) {
     orientation.timestamp = std::chrono::steady_clock::now();
 }
 
+void Dashboard::mission_status_received_callback(custom_interfaces::msg::MissionStatus::UniquePtr status_msg) {
+    for (int i = 0; i < 32; i ++) { // 32 = ROS message length. One less than MissionStatus C++ struct length.
+        status.current_command[i] = status_msg->current_command_name[i];
+        status.current_mission_file[i] = status_msg->current_mission_name[i];
+    }
+    status.duration_seconds = status_msg->seconds_total;
+    status.seconds_remaining = status_msg->seconds_remaining;
+    status.timestamp = std::chrono::steady_clock::now();
+}
+
+void Dashboard::gamepad_received_callback(custom_interfaces::msg::Gamepad::UniquePtr gamepad_msg) {
+    if (gamepad_msg->cross_button) {
+        send_go_signal();
+    }
+}
+
 void Dashboard::matlab_debug_f0_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr msg) {
     for (int i = 0; i < 16; i++) { 
         debug_flag_0.name[i] = msg->name[i];
@@ -264,16 +282,6 @@ void Dashboard::matlab_debug_set_pt_received_callback(custom_interfaces::msg::De
     debug_angular_velocity_setpt.y = msg->angular_velocity.y; // q
     debug_angular_velocity_setpt.z = msg->angular_velocity.z; // r
     debug_angular_velocity_setpt.timestamp = std::chrono::steady_clock::now();
-}
-
-void Dashboard::mission_status_received_callback(custom_interfaces::msg::MissionStatus::UniquePtr status_msg) {
-    for (int i = 0; i < 32; i ++) { // 32 = ROS message length. One less than MissionStatus C++ struct length.
-        status.current_command[i] = status_msg->current_command_name[i];
-        status.current_mission_file[i] = status_msg->current_mission_name[i];
-    }
-    status.duration_seconds = status_msg->seconds_total;
-    status.seconds_remaining = status_msg->seconds_remaining;
-    status.timestamp = std::chrono::steady_clock::now();
 }
 
 
