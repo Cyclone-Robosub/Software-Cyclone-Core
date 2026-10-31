@@ -266,6 +266,12 @@ void Dashboard::matlab_debug_set_pt_received_callback(custom_interfaces::msg::De
     debug_angular_velocity_setpt.timestamp = std::chrono::steady_clock::now();
 }
 
+void Dashboard::gamepad_received_callback(custom_interfaces::msg::Gamepad::UniquePtr gamepad_msg) {
+    if (gamepad_msg->cross_button) {
+        send_go_signal();
+    }
+}
+
 void Dashboard::mission_status_received_callback(custom_interfaces::msg::MissionStatus::UniquePtr status_msg) {
     for (int i = 0; i < 32; i ++) { // 32 = ROS message length. One less than MissionStatus C++ struct length.
         status.current_command[i] = status_msg->current_command_name[i];
