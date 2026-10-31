@@ -265,16 +265,15 @@ void Data_Logger::command_received_callback(custom_interfaces::msg::Command::Uni
 std::string Data_Logger::get_current_time() {
     char buffer [80];
 
-    std::time_t rawtime;
     std::tm* timeinfo;
-    std::time(&rawtime);
-    timeinfo = std::localtime(&rawtime);
-    std::strftime(buffer,80,"%Y-%m-%d-%H-%M-%S",timeinfo);
+    std::timespec current_time;
 
-    struct timespec current_time_for_milliseconds;
-    clock_gettime(CLOCK_MONOTONIC, &current_time_for_milliseconds);
-    long milliseconds = current_time_for_milliseconds.tv_nsec / 1000000;
+    clock_gettime(CLOCK_REALTIME, &current_time);
+    timeinfo = std::localtime(&current_time.tv_sec);
+    long milliseconds = current_time.tv_nsec / 1000000;
     std::string milliseconds_as_string = std::to_string(milliseconds);
+
+    std::strftime(buffer,80,"%Y-%m-%d-%H-%M-%S", timeinfo);
     while (milliseconds_as_string.size() < 3) {
         milliseconds_as_string.insert(milliseconds_as_string.begin(), '0');
     }

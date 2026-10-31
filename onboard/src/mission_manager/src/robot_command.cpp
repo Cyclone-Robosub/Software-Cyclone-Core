@@ -26,7 +26,6 @@ Command::Command(std::string name, std::shared_ptr<Command> next, std::shared_pt
         // intentionally blank
 }
 
-
 std::unique_ptr<custom_interfaces::msg::Command> Command::start_command_and_get_message() {
     start_time = std::chrono::steady_clock::now();
     return get_ros2_message();
@@ -91,6 +90,7 @@ bool Command::custom_success_criteria_met() {
     return false;
 }
 
+
 DriveToWorldWaypoint::DriveToWorldWaypoint(
         std::string name,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
@@ -141,6 +141,7 @@ std::unique_ptr<custom_interfaces::msg::Command> DriveToWorldWaypoint::get_ros2_
     return command_msg;
 }
 
+
 DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
         std::string name,
         std::unique_ptr<custom_interfaces::msg::Pose6D> goal_waypoint,
@@ -179,7 +180,6 @@ DriveToWorldWaypointSeeking::DriveToWorldWaypointSeeking(
         // intentionally blank
 }
 
-
 std::unique_ptr<custom_interfaces::msg::Command> DriveToWorldWaypointSeeking::get_ros2_message() {
     auto command_msg = std::make_unique<custom_interfaces::msg::Command>();
     command_msg->command = command_msg->DRIVE_TO_WORLD_WAYPOINT_SEEKING;
@@ -190,6 +190,7 @@ std::unique_ptr<custom_interfaces::msg::Command> DriveToWorldWaypointSeeking::ge
     command_msg->trick_id = trick_id;
     return command_msg;
 }
+
 
 Idle::Idle(std::string name, std::shared_ptr<Command> next, std::shared_ptr<Command> failure, double duration) :
     Command(name, next, failure), duration(duration) {
@@ -223,6 +224,7 @@ bool Idle::custom_success_criteria_met() {
     std::chrono::time_point now = std::chrono::steady_clock::now();
     return now > (start_time + (duration * 1000 * 1ms));
 }
+
 
 TrackObjectWaypoint::TrackObjectWaypoint(
         std::string name,
@@ -278,6 +280,7 @@ std::unique_ptr<custom_interfaces::msg::Command> TrackObjectWaypoint::get_ros2_m
     return command_msg;
 }
 
+
 DurationTrick::DurationTrick(
         std::string name,
         std::unique_ptr<custom_interfaces::msg::Pose6DMask> waypoint_mask,
@@ -326,6 +329,7 @@ std::unique_ptr<custom_interfaces::msg::Command> DurationTrick::get_ros2_message
     command_msg->trick_duration = duration;
     return command_msg;
 }
+
 
 DistanceTrick::DistanceTrick(
         std::string name,
@@ -376,6 +380,7 @@ std::unique_ptr<custom_interfaces::msg::Command> DistanceTrick::get_ros2_message
     return command_msg;
 }
 
+
 Root::Root() : Command("root") {
     // intentionally blank
 }
@@ -389,6 +394,7 @@ std::unique_ptr<custom_interfaces::msg::Command> Root::get_ros2_message() {
     command_msg->command = command_msg->IDLE;
     return command_msg;
 }
+
 
 Finish::Finish() : Command("finish", nullptr, nullptr) {
     // intentionally blank
