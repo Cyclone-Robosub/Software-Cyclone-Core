@@ -71,7 +71,7 @@ class Dashboard_TUI : public TUI_Interface {
         void write_header(std::string header, const int col_number);
         void write_selectable_header(std::string header, int current_mode, int active_mode, const int col_number);
         void display_status_with_colour(bool heartbeat, const int col_number, std::string colour_string);
-        void display_blue_if_stale(std::chrono::time_point<std::chrono::steady_clock> timestamp, std::string message);
+        void display_blue_if_fresh(std::chrono::time_point<std::chrono::steady_clock> timestamp, std::string message);
         void display_critical_status(bool heartbeat, const int col_number);
         void display_warning_status(bool heartbeat, const int col_number);
         void display_noncritical_status(bool heartbeat, const int col_number);
