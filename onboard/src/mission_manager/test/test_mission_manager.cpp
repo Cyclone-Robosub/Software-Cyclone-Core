@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "rclcpp/rclcpp.hpp"
 #include <filesystem>
+#include <sys/stat.h>
 
 #include "mission_manager.hpp"
 #include "mission_file_parser.hpp"
@@ -39,7 +40,12 @@ protected:
     }
 
     void create_parser() {
-        parser = std::make_shared<MissionFileParser>("../../onboard/src/mission_manager/test/test_mission_files/");
+        struct stat buffer;
+        if (stat("../../onboard/src/mission_manager/test/test_mission_files/", &buffer) == 0) {
+            parser = std::make_shared<MissionFileParser>("../../onboard/src/mission_manager/test/test_mission_files/");
+        } else {
+            parser = std::make_shared<MissionFileParser>("../../src/Software-Cyclone-Core/onboard/src/mission_manager/test/test_mission_files/");
+        }
     }
 };
 
