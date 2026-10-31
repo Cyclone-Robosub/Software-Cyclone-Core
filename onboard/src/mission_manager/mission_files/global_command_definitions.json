@@ -1,3 +1,36 @@
 {
-   
+    "commands": [
+        {
+            "reference": "go_home_no_timeout",
+            "action": "drive_to_world_waypoint",
+            "parameters": {
+                "goal_waypoint": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "waypoint_mask": {
+                    "x": true,
+                    "y": true,
+                    "z": true,
+                    "roll": false,
+                    "pitch": false,
+                    "yaw": false
+                },
+                "tolerance": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "hold_time": 2.0,
+                "timeout": -1
+            }
+        }
+    ]
 }

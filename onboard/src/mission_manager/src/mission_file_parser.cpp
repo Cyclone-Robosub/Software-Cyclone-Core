@@ -114,6 +114,8 @@ void MissionFileParser::print_all_registered_missions() {
 }
 
 void MissionFileParser::parse_new_files() {
+    global_definitions.clear();
+    parse_global_definitions();
     std::string file_name;
     while (!mission_files_not_yet_parsed.empty()) {
         file_name = mission_files_not_yet_parsed.front();
@@ -124,6 +126,7 @@ void MissionFileParser::parse_new_files() {
 
         std::string reference;
         std::string action;
+        std::string global_reference;
         json parameters;
         std::optional<std::array<uint8_t,16>> trick_id;
         std::shared_ptr<Command> command_entry;
@@ -133,8 +136,19 @@ void MissionFileParser::parse_new_files() {
 
             auto command_registry = std::map<std::string,std::pair<bool,std::shared_ptr<Command>>>();
 
-            for (auto command : mission_file_data["commands"]) {
+            // TODO potential cool feature: allow override of global params by setting locally (e.g. provide different timeout)
+            for (json command : mission_file_data["commands"]) {
+                /* This must come before the global reference check to ensure global commands are given the correct name. */
                 reference = command["reference"];
+                /* Check if this is a globally-scoped definition: if so, grab it from the global command definitions */
+                if (command["global_reference"] != nullptr) {
+                    global_reference = command["global_reference"];
+                    command = global_definitions[global_reference];
+                    if (command == nullptr) {
+                        throw std::runtime_error("Reference to global command " + global_reference + " not found in global command definitions!\n");
+                    }
+                }
+
                 action = command["action"];
                 parameters = command["parameters"];
                 if (parameters["trick_id"] == nullptr) {
@@ -240,8 +254,7 @@ std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> MissionFileParser
             updated_registry[next["ref"]].first = true;
             updated_registry[ref].second->set_next(updated_registry[next["ref"]].second);
         } else {
-            // TODO: better error handling
-            throw("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
+            throw std::runtime_error("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
         }
     }
     if (failure != nullptr) {
@@ -251,10 +264,23 @@ std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> MissionFileParser
             updated_registry[failure["ref"]].first = true;
             updated_registry[ref].second->set_failure(updated_registry[failure["ref"]].second);
         } else {
-            throw("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
+            throw std::runtime_error("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
         }
     }
     return updated_registry;
+}
+
+void MissionFileParser::parse_global_definitions() {
+    std::string file_name = "global_command_definitions.json";
+    auto file = std::ifstream(mission_folder_path + file_name);
+    if (!file.good()) {
+        throw std::invalid_argument("Mission file '" + file_name + "' not recognized!\n");
+    }
+    json commands = json::parse(file)["commands"];
+    for (json command : commands) {
+        global_definitions[command["reference"]] = command;
+    }
+
 }
 
 std::unique_ptr<custom_interfaces::msg::Pose6D> MissionFileParser::make_waypoint(json parameters_field) {
@@ -311,7 +337,7 @@ std::unique_ptr<custom_interfaces::msg::Tolerance6D> MissionFileParser::make_tol
 std::array<uint8_t,16> MissionFileParser::string_to_array(std::string string) {
     std::array<uint8_t,16> array = {0};
     if (string.size() > 16) {
-        throw("Object ID too long! Unable to parse, returning empty.\n");
+        throw std::runtime_error("Object ID too long! Unable to parse, returning empty.\n");
         return array;
     }
     for (int i = 0; i < 16; i++) {
