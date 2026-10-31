@@ -89,8 +89,6 @@ class Dashboard_TUI : public TUI_Interface {
         void display_mission_status(const int col_number, Mission_Status status);
         void display_debug(const int col_number, int num_flags, Debug_Flag_Msg* flags, Debug_State_Data* actual_point, Debug_State_Data* set_point);
         std::string format_floating_point(double coordinate);
-        std::string dvl_fresh(DVL_Data dvl_data);
-        std::string pwm_fresh(PWM_Data pwm_data);
         std::chrono::time_point<std::chrono::steady_clock> fresh_evaluation_time;
         const int col_1 = 0;
         const int col_2 = 35;
