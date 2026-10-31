@@ -33,7 +33,7 @@ std::string get_cur_timestamp()
 } // namespace
 
 central_logger::central_logger()
-: rclcpp::Node("Central_logger")
+: rclcpp::Node("central_logger")
 {
     const char* home = std::getenv("HOME");
     if (home == nullptr || *home == '\0')
