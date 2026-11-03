@@ -1,0 +1,16 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "cyclone-waypoint-mask",
+    "title": "Waypoint Mask",
+    "description": "A command definition",
+    "type": "object",
+    "properties": {
+		"x": {"type": "boolean"},
+		"y": {"type": "boolean"},
+		"z": {"type": "boolean"},
+		"roll": {"type": "boolean"},
+		"pitch": {"type": "boolean"},
+		"yaw": {"type": "boolean"}
+	},
+	"required": ["x", "y", "z", "roll", "pitch", "yaw"]
+}
