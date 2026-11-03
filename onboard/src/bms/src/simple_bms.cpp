@@ -17,8 +17,8 @@ bms_fd(std::move(bms_fd))
 SimpleBMS::~SimpleBMS() {
     // change i2c_fd to arbitary fd 
     /*
-    if (fd >= 0) {
-        close(fd);
+    if (bms_fd >= 0) {
+        close(bms_fd);
     }
     */
     if (i2c_fd >= 0) {
@@ -26,7 +26,7 @@ SimpleBMS::~SimpleBMS() {
     }
 }
 
-// init_fd()
+
 bool SimpleBMS::init_i2c() {
     // Open and connect to the ADC
     i2c_fd = open(I2C_FD, O_RDWR);
@@ -120,9 +120,10 @@ int ADC_FD::open_file() {
 
 #ifndef ENABLE_TESTING
 int main(int argc, char* argv[]) {
-    rclcpp::init(argc, argv);
     std::unique_ptr<FD_Interface> fd = std::make_unique<ADC_FD>("/dev/i2c-1");
-    rclcpp::spin(std::make_shared<SimpleBMS>());
+    rclcpp::init(argc, argv);
+    auto simple_bms = std::make_shared<SimpleBMS>(std::move(fd));
+    rclcpp::spin(simple_bms);
     rclcpp::shutdown();
     return 0;
 }

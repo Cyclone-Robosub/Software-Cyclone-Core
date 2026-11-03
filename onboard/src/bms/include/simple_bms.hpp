@@ -16,7 +16,6 @@ using namespace rclcpp;
 class ADC_FD : public Path_FD {
 protected:
     int open_file() override;
-    bool config();
 public:
     ADC_FD(std::string path);
 };
@@ -28,7 +27,8 @@ class SimpleBMS : public rclcpp::Node {
             float voltage;
             float current;
         };
-
+        
+        
         SimpleBMS(std::unique_ptr<FD_Interface> pico_fd);
         ~SimpleBMS();
        
