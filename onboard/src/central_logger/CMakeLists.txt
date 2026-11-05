@@ -77,9 +77,9 @@ if(BUILD_TESTING)
   )
   
   # Add test executable and link with library
-  ament_add_ros_isolated_gtest(${PROJECT_NAME}_test tests/test_central_logger.cpp)
+  ament_add_ros_isolated_gtest(${PROJECT_NAME}_test test/test_central_logger.cpp)
   target_compile_definitions(${PROJECT_NAME}_test PUBLIC ENABLE_TESTING)
-  target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME}_lib)
+  target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME}_lib log_publisher)
   target_include_directories(${PROJECT_NAME}_test PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>

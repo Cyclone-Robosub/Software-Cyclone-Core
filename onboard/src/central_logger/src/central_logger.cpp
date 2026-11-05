@@ -1,5 +1,6 @@
 #include "central_logger.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <ctime>
 #include <fstream>
@@ -57,6 +58,7 @@ void central_logger::log_to_file(const std::array<std::uint8_t, 32>& name, const
     const std::string file_name(name.begin(), std::find(name.begin(), name.end(), '\0'));
     const std::string msg_contents(contents.begin(), std::find(contents.begin(), contents.end(), '\0'));
 
+    // Reject names with a directory part, should only be a file name
     if (file_name.empty() || std::filesystem::path(file_name).filename() != file_name)
     {
         RCLCPP_ERROR(this->get_logger(), "Invalid log file name: '%s'", file_name.c_str());
@@ -73,6 +75,7 @@ void central_logger::log_to_file(const std::array<std::uint8_t, 32>& name, const
 
     file << get_cur_timestamp()
          << ": " << msg_contents << '\n';
+    // Flush every entry so logs written before a crash are kept
     file.flush();
     if (!file)
     {
