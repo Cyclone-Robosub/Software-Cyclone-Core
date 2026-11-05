@@ -2,7 +2,7 @@
 
 using namespace std::chrono_literals;
 
-Dashboard::Dashboard(std::unique_ptr<TUI_Interface> tui) : Node("tui"), tui(std::move(tui)) {
+Dashboard::Dashboard(std::unique_ptr<Dashboard_TUI> tui) : Node("tui"), tui(std::move(tui)) {
     // Heartbeats
     thrust_interface_heartbeat_subscription = this->create_subscription<std_msgs::msg::Empty>("thrust_interface_heartbeat", 10, 
         std::bind(&Dashboard::thrust_interface_heartbeat_received_callback, this, std::placeholders::_1));
@@ -471,6 +471,37 @@ void Dashboard::clear_display() {
     tui->clear_display();
 }
 
+void Dashboard_TUI::delete_or_direction() {
+    char c = 0;
+    read(STDIN_FILENO, &c, 1);
+    read(STDIN_FILENO, &c, 1);
+    if (c == 51) { // delete key
+        read(STDIN_FILENO, &c, 1);
+        if (c == 126 && cursor_pos < num_read) { // standard delete
+            write(STDOUT_FILENO, "\x1B[1C", 4);
+            cursor_pos++;
+            backspace();
+        }
+        if (c == 59) { // ctrl + delete
+            read(STDIN_FILENO, &c, 1); // clear extra identifier
+            read(STDIN_FILENO, &c, 1); // clear extra identifier
+            write(STDOUT_FILENO, "\x1B[0K", 4); // erase from cursor to end of line
+            num_read -= (current_input.size() - cursor_pos);
+            current_input.erase(cursor_pos, std::string::npos);
+        }
+    }
+    else { // direction key
+        if (c == 67 && cursor_pos < num_read) { // right
+            write(STDOUT_FILENO, "\x1B[1C", 4);
+            current_window_index = (current_window_index + 1) % windows.size();
+        }
+        if (c == 68 && cursor_pos > 0) { // left
+            write(STDOUT_FILENO, "\x1B[1D", 4);
+            current_window_index = (current_window_index + windows.size() -1) % windows.size();
+        }
+    }
+}
+
 void Dashboard_TUI::process_input() {
     display_mutex.lock();
     int c = 0;
@@ -482,6 +513,9 @@ void Dashboard_TUI::process_input() {
         if (c == 127 && cursor_pos > 0) {
             current_input.pop_back();
             cursor_pos -= 1;
+        }
+        if (c == 27) {
+            delete_or_direction();
         }
     }
     display_mutex.unlock();
@@ -762,18 +796,16 @@ void Dashboard_TUI::display_mission_status(const int col_number, Mission_Status 
     printf("\n");
 }
 
-void Dashboard_TUI::display_debug(
-    const int col_number, 
-    int num_flags,
-    Debug_Flag_Msg* flags, 
-    Debug_State_Data* actual_point, 
-    Debug_State_Data* set_point
-) {
+void Dashboard_TUI::display_debug(const int col_number) {
+    Debug_Flag_Msg debug_flags[3] = {debug_flag_0, debug_flag_1, debug_flag_2};
+    Debug_State_Data debug_states_actual[4] = {debug_position, debug_orientation, debug_velocity, debug_angular_velocity};
+    Debug_State_Data debug_states_setpt[4] = {debug_position_setpt, debug_orientation_setpt, debug_velocity_setpt, debug_angular_velocity_setpt};
+
     for(int i = 0; i < num_flags; i++) {
-        std::string name = std::string(flags[i].name);
+        std::string name = std::string(debug_flags[i].name);
         jump_to_column(col_number);
         printf("%-17s", (name + ":").c_str());
-        display_blue_if_fresh(flags[i].timestamp, format_floating_point(flags[i].value));
+        display_blue_if_fresh(debug_flags[i].timestamp, format_floating_point(debug_flags[i].value));
         printf("\n");
     }
 
@@ -789,8 +821,8 @@ void Dashboard_TUI::display_debug(
 
     int state_idx = 0;
     for(int i = 0; i < 4; i++) {
-        Debug_State_Data actual = actual_point[i];
-        Debug_State_Data setpoint = set_point[i];
+        Debug_State_Data actual = debug_states_actual[i];
+        Debug_State_Data setpoint = debug_states_setpt[i];
 
         jump_to_column(col_number);
         printf("%-7s", (states[state_idx++] + ":").c_str());
@@ -844,54 +876,7 @@ std::string Dashboard::get_ping() { // TODO: when robot looses connection ping h
     }
 }
 
-void Dashboard_TUI::display_tui(va_list args) {
-    int current_mux_mode = va_arg(args, int);
-    bool thrust_interface_heartbeat = (bool)va_arg(args, int);
-    bool mux_heartbeat = (bool)va_arg(args, int);
-    bool cli_heartbeat = (bool)va_arg(args, int);
-    bool ctrl_heartbeat = (bool)va_arg(args, int);
-    bool echo_heartbeat = (bool)va_arg(args, int);
-    bool dvl_heartbeat = (bool)va_arg(args, int);
-    bool joystick_heartbeat = (bool)va_arg(args, int);
-    bool mission_manager_heartbeat = (bool)va_arg(args, int);
-    PWM_Data pwms_cmd = va_arg(args, PWM_Data);
-    PWM_Data pwms_cli = va_arg(args, PWM_Data);
-    PWM_Data pwms_ctrl = va_arg(args, PWM_Data);
-    PWM_Data pwms_echo = va_arg(args, PWM_Data);
-    DVL_VR_Data velocity = va_arg(args, DVL_VR_Data);
-    DVL_Data position = va_arg(args, DVL_Data);
-    DVL_Data orientation = va_arg(args, DVL_Data);
-    Mission_Status status = va_arg(args, Mission_Status);
-
-    Debug_Flag_Msg debug_flag_0 = va_arg(args, Debug_Flag_Msg);
-    Debug_Flag_Msg debug_flag_1 = va_arg(args, Debug_Flag_Msg);
-    Debug_Flag_Msg debug_flag_2 = va_arg(args, Debug_Flag_Msg);
-
-    Debug_State_Data debug_position = va_arg(args, Debug_State_Data);
-    Debug_State_Data debug_orientation = va_arg(args, Debug_State_Data);
-    Debug_State_Data debug_velocity = va_arg(args, Debug_State_Data);
-    Debug_State_Data debug_angular_velocity = va_arg(args, Debug_State_Data);
-
-    Debug_State_Data debug_position_setpt = va_arg(args, Debug_State_Data);
-    Debug_State_Data debug_orientation_setpt = va_arg(args, Debug_State_Data);
-    Debug_State_Data debug_velocity_setpt = va_arg(args, Debug_State_Data);
-    Debug_State_Data debug_angular_velocity_setpt = va_arg(args, Debug_State_Data);
-
-    bool ping_ok = (bool)va_arg(args, int);
-    double ping_rtt = va_arg(args, double);
-    double seconds_since_ping = va_arg(args, double);
-    bool ready = (bool)va_arg(args, int);
-    va_end(args);
-    
-    int num_flags = 3;
-    Debug_Flag_Msg debug_flags[3] = {debug_flag_0, debug_flag_1, debug_flag_2};
-    Debug_State_Data debug_states_actual[4] = {debug_position, debug_orientation, debug_velocity, debug_angular_velocity};
-    Debug_State_Data debug_states_setpt[4] = {debug_position_setpt, debug_orientation_setpt, debug_velocity_setpt, debug_angular_velocity_setpt};
-    fresh_evaluation_time = std::chrono::steady_clock::now();
-
-    write(STDOUT_FILENO, "\x1B[?25l", 6); // invisible cursor
-    reset_cursor_pos();
-
+void Dashboard_TUI::display_window_main() {
     write_header("thrust_interface", col_1);
     display_critical_status(thrust_interface_heartbeat, col_1);
     printf("\n");
@@ -941,7 +926,7 @@ void Dashboard_TUI::display_tui(va_list args) {
     printf("\n");
 
     write_header("mission_manager", col_2);
-    display_mission_manager(current_mux_mode, 2, mission_manager_heartbeat, ready, col_2);
+    display_mission_manager(current_mux_mode, 2, mission_manager_heartbeat, mission_manager_ready, col_2);
 
     reset_cursor_pos();
 
@@ -950,7 +935,66 @@ void Dashboard_TUI::display_tui(va_list args) {
     printf("\n");
 
     write_header("Matlab Debug", col_3);
-    display_debug(col_3, num_flags, debug_flags, debug_states_actual, debug_states_setpt);
+    display_debug(col_3);
+    }
+
+void Dashboard_TUI::display_window_mission_manager() {
+
+}
+
+void Dashboard_TUI::display_tui(va_list args) {
+    current_mux_mode = va_arg(args, int);
+    thrust_interface_heartbeat = (bool)va_arg(args, int);
+    mux_heartbeat = (bool)va_arg(args, int);
+    cli_heartbeat = (bool)va_arg(args, int);
+    ctrl_heartbeat = (bool)va_arg(args, int);
+    echo_heartbeat = (bool)va_arg(args, int);
+    dvl_heartbeat = (bool)va_arg(args, int);
+    joystick_heartbeat = (bool)va_arg(args, int);
+    mission_manager_heartbeat = (bool)va_arg(args, int);
+    pwms_cmd = va_arg(args, PWM_Data);
+    pwms_cli = va_arg(args, PWM_Data);
+    pwms_ctrl = va_arg(args, PWM_Data);
+    pwms_echo = va_arg(args, PWM_Data);
+    velocity = va_arg(args, DVL_VR_Data);
+    position = va_arg(args, DVL_Data);
+    orientation = va_arg(args, DVL_Data);
+    status = va_arg(args, Mission_Status);
+
+    debug_flag_0 = va_arg(args, Debug_Flag_Msg);
+    debug_flag_1 = va_arg(args, Debug_Flag_Msg);
+    debug_flag_2 = va_arg(args, Debug_Flag_Msg);
+
+    debug_position = va_arg(args, Debug_State_Data);
+    debug_orientation = va_arg(args, Debug_State_Data);
+    debug_velocity = va_arg(args, Debug_State_Data);
+    debug_angular_velocity = va_arg(args, Debug_State_Data);
+
+    debug_position_setpt = va_arg(args, Debug_State_Data);
+    debug_orientation_setpt = va_arg(args, Debug_State_Data);
+    debug_velocity_setpt = va_arg(args, Debug_State_Data);
+    debug_angular_velocity_setpt = va_arg(args, Debug_State_Data);
+
+    ping_ok = (bool)va_arg(args, int);
+    ping_rtt = va_arg(args, double);
+    seconds_since_ping = va_arg(args, double);
+    mission_manager_ready = (bool)va_arg(args, int);
+    va_end(args);
+    
+    num_flags = 3;
+    fresh_evaluation_time = std::chrono::steady_clock::now();
+
+    write(STDOUT_FILENO, "\x1B[?25l", 6); // invisible cursor
+    reset_cursor_pos();
+
+    switch (windows[current_window_index]) {
+        case Window::MAIN:
+            display_window_main();
+            break;
+        case Window::MISSION_MANAGER:
+            display_window_mission_manager();
+            break;
+    }
 
     write(STDOUT_FILENO, "\x1B[38;29H", 8); // jumpt to prompt (line/column)
     write(STDOUT_FILENO, "\x1B[?25h", 6); // visible cursor
@@ -964,7 +1008,7 @@ void Dashboard_TUI::display_tui(va_list args) {
 
 int main(int argc, char* argv[]) {    
     rclcpp::init(argc, argv);
-    std::unique_ptr<TUI_Interface> tui = std::make_unique<Dashboard_TUI>();
+    std::unique_ptr<Dashboard_TUI> tui = std::make_unique<Dashboard_TUI>();
     auto dashboard = std::make_shared<Dashboard>(std::move(tui));
     
     std::thread ros_thread([&]() { // Needs to be seperate thread so that work loop can run

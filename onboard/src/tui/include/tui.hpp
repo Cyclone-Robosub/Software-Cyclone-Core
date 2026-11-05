@@ -60,12 +60,60 @@ struct Mission_Status {
     std::chrono::time_point<std::chrono::steady_clock> timestamp;
 };
 
+enum class Window {
+    MAIN,
+    MISSION_MANAGER
+};
+
 class Dashboard_TUI : public TUI_Interface {
     public:
         explicit Dashboard_TUI() {};
         virtual void display_tui(va_list args) override;
         virtual void process_input() override;
+        virtual void delete_or_direction() override;
         virtual void refresh_display(int numArgs, ...) override;
+
+        size_t current_window_index = 0;
+        const std::vector<Window> windows{Window::MAIN, Window::MISSION_MANAGER};
+
+        // Variables used in the display_tui function and hold the most recent data received from ROS topics
+        int current_mux_mode;
+        bool thrust_interface_heartbeat;
+        bool mux_heartbeat;
+        bool cli_heartbeat;
+        bool ctrl_heartbeat;
+        bool echo_heartbeat;
+        bool dvl_heartbeat;
+        bool joystick_heartbeat;
+        bool mission_manager_heartbeat;
+        PWM_Data pwms_cmd;
+        PWM_Data pwms_cli;
+        PWM_Data pwms_ctrl;
+        PWM_Data pwms_echo;
+        DVL_VR_Data velocity;
+        DVL_Data position;
+        DVL_Data orientation;
+        Mission_Status status;
+
+        Debug_Flag_Msg debug_flag_0;
+        Debug_Flag_Msg debug_flag_1;
+        Debug_Flag_Msg debug_flag_2;
+
+        Debug_State_Data debug_position;
+        Debug_State_Data debug_orientation;
+        Debug_State_Data debug_velocity;
+        Debug_State_Data debug_angular_velocity;
+
+        Debug_State_Data debug_position_setpt;
+        Debug_State_Data debug_orientation_setpt;
+        Debug_State_Data debug_velocity_setpt;
+        Debug_State_Data debug_angular_velocity_setpt;
+
+        bool ping_ok;
+        double ping_rtt;
+        double seconds_since_ping;
+        bool mission_manager_ready;
+
     private:
         void jump_to_column(const int col_number);
         void reset_cursor_pos();
@@ -88,8 +136,12 @@ class Dashboard_TUI : public TUI_Interface {
         void display_drr(const int col_number, DVL_Data position, DVL_Data orientation);
         void display_commands();
         void display_mission_status(const int col_number, Mission_Status status);
-        void display_debug(const int col_number, int num_flags, Debug_Flag_Msg* flags, Debug_State_Data* actual_point, Debug_State_Data* set_point);
+        void display_debug(const int col_number);
         std::string format_floating_point(double coordinate);
+        int num_flags = 3;
+        Debug_Flag_Msg debug_flags[3];
+        Debug_State_Data debug_states_actual[4];
+        Debug_State_Data debug_states_setpt[4];
         std::chrono::time_point<std::chrono::steady_clock> fresh_evaluation_time;
         const int col_1 = 0;
         const int col_2 = 35;
@@ -99,15 +151,18 @@ class Dashboard_TUI : public TUI_Interface {
         const int col_2_4 = 77;
         const int col_3 = 88;
         int prev_debug_length = 256; // don't like this, but need a way to clean up old text...
+
+        void display_window_main();
+        void display_window_mission_manager();
 };
 
 class Dashboard : public rclcpp::Node {
 public:
-    Dashboard(std::unique_ptr<TUI_Interface> tui);
+    Dashboard(std::unique_ptr<Dashboard_TUI> tui);
     void work_loop();
     void ping_loop();
 private:
-    std::unique_ptr<TUI_Interface> tui;
+    std::unique_ptr<Dashboard_TUI> tui;
 
     // Heartbeats
     rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr thrust_interface_heartbeat_subscription;
