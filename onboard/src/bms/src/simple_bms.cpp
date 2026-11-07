@@ -2,9 +2,9 @@
 
 using namespace std::chrono_literals;
 
-SimpleBMS::SimpleBMS(std::unique_ptr<FD_Interface> pico_fd) :
-Node("simple_bms"),
-bms_fd(std::move(bms_fd)) 
+SimpleBMS::SimpleBMS (std::unique_ptr<FD_Interface> bms_fd) :
+    Node("simple_bms"),
+    bms_fd(std::move(bms_fd)) 
 {
     if (init_i2c()){
         // Timer to check voltage & current values at a frequency of 100 hz
@@ -30,6 +30,8 @@ SimpleBMS::~SimpleBMS() {
 bool SimpleBMS::init_i2c() {
     // Open and connect to the ADC
     i2c_fd = open(I2C_FD, O_RDWR);
+    //
+    
     if (i2c_fd < 0) {
         std::cout << "error: Device not found. Got " << i2c_fd << std::endl;
         return false;
@@ -112,10 +114,11 @@ ADC_FD::ADC_FD (std::string path) : Path_FD(path) {
 }
 
 int ADC_FD::open_file() {
+    int fd;
     if ((fd = open(path.c_str(), O_RDWR)) == -1) {
         return -1;
     }
-    return 1;
+    return fd;
 }
 
 #ifndef ENABLE_TESTING
