@@ -4,6 +4,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <mutex>
+#include <regex>
 #include <stdarg.h>
 
 #ifndef TUI_INTERFACE
@@ -19,6 +20,7 @@ protected:
     std::string current_input;
     int cursor_pos = 0;
     int num_read = 0;
+    int column_inline = 0;
     struct termios orig_termios;
     virtual void insert_into_input(char c);
     virtual void backspace();
@@ -35,7 +37,8 @@ public:
     virtual void unfreeze_display();
     virtual std::string get_current_input();
     virtual void clear_input();
-
+    virtual void tui_printf(const char* msg);
+    virtual void set_column(int new_inline);
 };
 
 #endif // TUI_INTERFACE

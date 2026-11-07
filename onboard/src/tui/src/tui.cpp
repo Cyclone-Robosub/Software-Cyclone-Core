@@ -499,34 +499,30 @@ void Dashboard_TUI::reset_cursor_pos() {
     write(STDOUT_FILENO, "\x1B[H", 3);
 }
 
-void Dashboard_TUI::write_header(std::string header, int col_number) {
-    jump_to_column(col_number);
-    write(STDOUT_FILENO, "\x1B[1m", 4); // set bold
-    printf("%s\n", header.c_str());
-    write(STDOUT_FILENO, "\x1B[22m", 5); // unset bold
-    jump_to_column(col_number);
+void Dashboard_TUI::write_header(std::string header) {
+    tui_printf("\x1B[1m"); // set bold
+    tui_printf((header + '\n').c_str());
+    tui_printf("\n\x1B[22m"); // unset bold
 }
 
-void Dashboard_TUI::write_selectable_header(std::string header, int current_mode, int active_mode, const int col_number) {
+void Dashboard_TUI::write_selectable_header(std::string header, int current_mode, int active_mode) {
     if (active_mode == current_mode) {
-        write_header("= " + header + " =", col_number);
+        write_header("= " + header + " =");
     }
     else {
-        write_header(header + "    ", col_number); // extra spaces to erase = = from when selected
+        write_header(header + "    "); // extra spaces to erase = = from when selected
     }
 }
 
-void Dashboard_TUI::display_status_with_colour(bool heartbeat, const int col_number, std::string colour_string) {
-    jump_to_column(col_number);
+void Dashboard_TUI::display_status_with_colour(bool heartbeat, std::string colour_string) {
     if (!heartbeat) {
         write(STDOUT_FILENO, "\x1B[5;7m", 6); // blinking, inverted
         write(STDOUT_FILENO, colour_string.c_str(), colour_string.length()); // set colour
-        printf("== No heartbeat detected! ==\n");
+        tui_printf("== No heartbeat detected! ==\n");
         write(STDOUT_FILENO, "\x1B[0m", 4); // reset style
     } else {
-        printf("============ OK ============\n");
+        tui_printf("============ OK ============\n");
     }
-    jump_to_column(col_number);
 }
 
 void Dashboard_TUI::display_blue_if_fresh(std::chrono::time_point<std::chrono::steady_clock> timestamp, std::string message){
@@ -534,39 +530,39 @@ void Dashboard_TUI::display_blue_if_fresh(std::chrono::time_point<std::chrono::s
     if (fresh_evaluation_time - timestamp < 0.5s) {
         write(STDOUT_FILENO, "\x1B[1;94m", 7); // bold, blue
     }
-    printf("%s", message.c_str());
+    tui_printf(message.c_str());
     fflush(stdout);
     write(STDOUT_FILENO, "\x1B[39;22m", 8); // unset bold, blue
     fflush(stdout);
 }
 
-void Dashboard_TUI::display_warning_status(bool heartbeat, const int col_number) {
-    display_status_with_colour(heartbeat, col_number, "\x1B[38;5;166;107m"); // orange foreground, white background
+void Dashboard_TUI::display_warning_status(bool heartbeat) {
+    display_status_with_colour(heartbeat, "\x1B[38;5;166;107m"); // orange foreground, white background
 }
 
-void Dashboard_TUI::display_critical_status(bool heartbeat, const int col_number) {
-    display_status_with_colour(heartbeat, col_number, "\x1B[31;107m"); // red foreground, white background
+void Dashboard_TUI::display_critical_status(bool heartbeat) {
+    display_status_with_colour(heartbeat, "\x1B[31;107m"); // red foreground, white background
 }
 
-void Dashboard_TUI::display_noncritical_status(bool heartbeat, const int col_number) {
-    display_status_with_colour(heartbeat, col_number, ""); // no special colour (black foreground, white background)
+void Dashboard_TUI::display_noncritical_status(bool heartbeat) {
+    display_status_with_colour(heartbeat, ""); // no special colour (black foreground, white background)
 }
 
-void Dashboard_TUI::display_escalatable_critical_status(int current_mode, int critical_mode, bool heartbeat, const int col_number) {
+void Dashboard_TUI::display_escalatable_critical_status(int current_mode, int critical_mode, bool heartbeat) {
     if (current_mode == critical_mode) {
-        display_critical_status(heartbeat, col_number);
+        display_critical_status(heartbeat);
     }
     else {
-        display_noncritical_status(heartbeat, col_number);
+        display_noncritical_status(heartbeat);
     }
 }
 
 void Dashboard_TUI::display_escalatable_warning_status(int current_mode, int warning_mode, bool heartbeat, const int col_number) {
     if (current_mode == warning_mode) {
-        display_warning_status(heartbeat, col_number);
+        display_warning_status(heartbeat);
     }
     else {
-        display_noncritical_status(heartbeat, col_number);
+        display_noncritical_status(heartbeat);
     }
 }
 
@@ -655,38 +651,34 @@ std::string Dashboard_TUI::format_floating_point(double coordinate) {
 }
 
 void Dashboard_TUI::display_vr(const int col_number, DVL_VR_Data velocity) {
-    jump_to_column(col_number);
-    printf("Velocity:    | x: ");
+    tui_printf("Velocity:    | x: ");
     display_blue_if_fresh(velocity.timestamp, format_floating_point(velocity.x));
-    printf(" | y: ");
+    tui_printf(" | y: ");
     display_blue_if_fresh(velocity.timestamp, format_floating_point(velocity.y));
-    printf(" | z: ");
+    tui_printf(" | z: ");
     display_blue_if_fresh(velocity.timestamp, format_floating_point(velocity.z));
-    printf(" | alt: ");
+    tui_printf(" | alt: ");
     display_blue_if_fresh(velocity.timestamp, format_floating_point(velocity.altitude));
-    printf(" |\n");
+    tui_printf(" |\n");
 }
 
 
 void Dashboard_TUI::display_drr(const int col_number, DVL_Data position, DVL_Data orientation) {
-    jump_to_column(col_number);
-
-    printf("Position:    | x: ");
+    tui_printf("Position:    | x: ");
     display_blue_if_fresh(position.timestamp, format_floating_point(position.x));
-    printf(" | y: ");
+    tui_printf(" | y: ");
     display_blue_if_fresh(position.timestamp, format_floating_point(position.y));
-    printf(" | z: ");
+    tui_printf(" | z: ");
     display_blue_if_fresh(position.timestamp, format_floating_point(position.z));
-    printf(" |\n");
+    tui_printf(" |\n");
 
-    jump_to_column(col_number);
-    printf("Orientation: | x: ");
+    tui_printf("Orientation: | x: ");
     display_blue_if_fresh(orientation.timestamp, format_floating_point(orientation.x));
-    printf(" | y: ");
+    tui_printf(" | y: ");
     display_blue_if_fresh(orientation.timestamp, format_floating_point(orientation.y));
-    printf(" | z: ");
+    tui_printf(" | z: ");
     display_blue_if_fresh(orientation.timestamp, format_floating_point(orientation.z));
-    printf(" |\n");
+    tui_printf(" |\n");
 }
 
 void Dashboard_TUI::display_commands() {
@@ -700,26 +692,20 @@ void Dashboard_TUI::display_commands() {
     printf("\nEnter command (Q to quit) > ");
     fflush(stdout);
 
+    column_inline = col_2;
     write(STDOUT_FILENO, "\x1B[u", 3); // Restore cursor position
-    jump_to_column(col_2);
-    printf("Sensor Resets:\n");
-    jump_to_column(col_2);
-    printf("[A]: Reset DRR\n");
-    jump_to_column(col_2);
-    printf("[B]: Reset Gyro\n");
-    jump_to_column(col_2);
-    printf("[C]: Reset Matlab Pos\n");
+    tui_printf("Sensor Resets:\n");
+    tui_printf("[A]: Reset DRR\n");
+    tui_printf("[B]: Reset Gyro\n");
+    tui_printf("[C]: Reset Matlab Pos\n");
     
+    column_inline = col_2_3;
     write(STDOUT_FILENO, "\x1B[u", 3); // Restore cursor position
     fflush(stdout);
-    jump_to_column(col_2_3);
-    printf("Robot Control:\n");
-    jump_to_column(col_2_3);
-    printf("[D]: Toggle Ready\n");
-    jump_to_column(col_2_3);
-    printf("[E]: Send Go Signal\n");
-    jump_to_column(col_2_3);
-    printf("[F]: Revive Pico\n");
+    tui_printf("Robot Control:\n");
+    tui_printf("[D]: Toggle Ready\n");
+    tui_printf("[E]: Send Go Signal\n");
+    tui_printf("[F]: Revive Pico\n");
 }
 
 void Dashboard_TUI::display_mission_status(const int col_number, Mission_Status status) {
@@ -884,33 +870,34 @@ void Dashboard_TUI::display_tui(va_list args) {
     write(STDOUT_FILENO, "\x1B[?25l", 6); // invisible cursor
     reset_cursor_pos();
 
-    write_header("thrust_interface", col_1);
-    display_critical_status(thrust_interface_heartbeat, col_1);
-    printf("\n");
+    set_column(col_1);
+    write_header("thrust_interface");
+    display_critical_status(thrust_interface_heartbeat);
+    tui_printf("\n");
 
-    write_header("soft_mux", col_1);
-    display_critical_status(mux_heartbeat, col_1);
-    printf("\n");
+    write_header("soft_mux");
+    display_critical_status(mux_heartbeat);
+    tui_printf("\n");
 
-    write_selectable_header("cli", current_mux_mode, 1, col_1);
-    display_escalatable_critical_status(current_mux_mode, 1, cli_heartbeat, col_1);
-    printf("\n");
+    write_selectable_header("cli", current_mux_mode, 1);
+    display_escalatable_critical_status(current_mux_mode, 1, cli_heartbeat);
+    tui_printf("\n");
 
-    write_selectable_header("ctrl", current_mux_mode, 2, col_1);
-    display_escalatable_critical_status(current_mux_mode, 2, ctrl_heartbeat, col_1);
-    printf("\n");
+    write_selectable_header("ctrl", current_mux_mode, 2);
+    display_escalatable_critical_status(current_mux_mode, 2, ctrl_heartbeat);
+    tui_printf("\n");
 
-    write_selectable_header("echo", current_mux_mode, 3, col_1);
-    display_escalatable_critical_status(current_mux_mode, 3, echo_heartbeat, col_1);
-    printf("\n");
+    write_selectable_header("echo", current_mux_mode, 3);
+    display_escalatable_critical_status(current_mux_mode, 3, echo_heartbeat);
+    tui_printf("\n");
 
-    write_header("dvl", col_1);
-    display_critical_status(dvl_heartbeat, col_1);
+    write_header("dvl");
+    display_critical_status(dvl_heartbeat);
     display_vr(col_1, velocity);
     display_drr(col_1, position, orientation);
-    printf("\n");
+    tui_printf("\n");
 
-    write_header("Robot Connection Status", col_1);
+    write_header("Robot Connection Status");
     display_connection_info(ping_ok, seconds_since_ping, ping_rtt, col_1);
 
     printf("\n");
@@ -924,24 +911,26 @@ void Dashboard_TUI::display_tui(va_list args) {
     
     reset_cursor_pos();
 
-    write_header("PWMs", col_2);
+    set_column(col_2);
+    write_header("PWMs");
     display_all_pwms(pwms_cmd, pwms_cli, pwms_ctrl, pwms_echo);
     printf("\n");
 
-    write_header("Joystick", col_2);
-    display_escalatable_critical_status(current_mux_mode, 2, joystick_heartbeat, col_2);
+    write_header("Joystick");
+    display_escalatable_critical_status(current_mux_mode, 2, joystick_heartbeat);
     printf("\n");
 
-    write_header("mission_manager", col_2);
+    write_header("mission_manager");
     display_mission_manager(current_mux_mode, 2, mission_manager_heartbeat, ready, col_2);
 
     reset_cursor_pos();
 
-    write_header("Mission Status", col_3);
+    set_column(col_3);
+    write_header("Mission Status");
     display_mission_status(col_3, status);
     printf("\n");
 
-    write_header("Matlab Debug", col_3);
+    write_header("Matlab Debug");
     display_debug(col_3, num_flags, debug_flags, debug_states_actual, debug_states_setpt);
 
     write(STDOUT_FILENO, "\x1B[38;29H", 8); // jumpt to prompt (line/column)

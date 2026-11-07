@@ -163,3 +163,18 @@ void TUI_Interface::clear_input() {
     current_input.clear();
     cursor_pos = 0;
 }
+
+void TUI_Interface::set_column(int new_inline) {
+    column_inline = new_inline;
+    std::string column_string = "\x1B[" + std::to_string(column_inline) + "G";
+    printf(column_string.c_str());
+}
+
+void TUI_Interface::tui_printf(const char* msg) {
+    std::string column_string = "\n\x1B[" + std::to_string(column_inline) + "G";
+    std::regex reg("(\\n)+");
+
+    std::string modified = std::regex_replace(std::string(msg), reg, column_string);
+    printf(modified.c_str());
+    
+}

@@ -68,14 +68,14 @@ class Dashboard_TUI : public TUI_Interface {
     private:
         void jump_to_column(const int col_number);
         void reset_cursor_pos();
-        void write_header(std::string header, const int col_number);
-        void write_selectable_header(std::string header, int current_mode, int active_mode, const int col_number);
-        void display_status_with_colour(bool heartbeat, const int col_number, std::string colour_string);
+        void write_header(std::string header);
+        void write_selectable_header(std::string header, int current_mode, int active_mode);
+        void display_status_with_colour(bool heartbeat, std::string colour_string);
         void display_blue_if_fresh(std::chrono::time_point<std::chrono::steady_clock> timestamp, std::string message);
-        void display_critical_status(bool heartbeat, const int col_number);
-        void display_warning_status(bool heartbeat, const int col_number);
-        void display_noncritical_status(bool heartbeat, const int col_number);
-        void display_escalatable_critical_status(int current_mode, int critical_mode, bool heartbeat, const int col_number);
+        void display_critical_status(bool heartbeat);
+        void display_warning_status(bool heartbeat);
+        void display_noncritical_status(bool heartbeat);
+        void display_escalatable_critical_status(int current_mode, int critical_mode, bool heartbeat);
         void display_escalatable_warning_status(int current_mode, int warning_mode, bool heartbeat, const int col_number);
         void display_mission_manager(int current_mux_mode, int warning_mode, bool heartbeat, bool ready, const int col_number);
         void display_ready(const int col_number);
