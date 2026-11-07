@@ -6,10 +6,14 @@ SimpleBMS::SimpleBMS (std::unique_ptr<FD_Interface> bms_fd) :
     Node("simple_bms"),
     bms_fd(std::move(bms_fd)) 
 {
+    /*
     if (init_i2c()){
         // Timer to check voltage & current values at a frequency of 100 hz
         battery_timer = this->create_wall_timer(20ms, std::bind(&SimpleBMS::bms_callback, this)); // This has been changed to 20ms from 10ms since it needs to wait 10ms in between reading the voltage and the current
     }
+    */
+    // Timer to check voltage & current values at a frequency of 100 hz
+    battery_timer = this->create_wall_timer(20ms, std::bind(&SimpleBMS::bms_callback, this)); // This has been changed to 20ms from 10ms since it needs to wait 10ms in between reading the voltage and the current
     // Publisher to Battery topic
     bms_publisher = this->create_publisher<custom_interfaces::msg::Battery>("bms", 10);
 }
@@ -30,7 +34,6 @@ SimpleBMS::~SimpleBMS() {
 bool SimpleBMS::init_i2c() {
     // Open and connect to the ADC
     i2c_fd = open(I2C_FD, O_RDWR);
-    //
     
     if (i2c_fd < 0) {
         std::cout << "error: Device not found. Got " << i2c_fd << std::endl;
@@ -75,6 +78,7 @@ void SimpleBMS::bms_callback() {
 
     // read voltage. i2c is configured to read voltage upon init and at the end of the bms_callback here 
     status.voltage = readBMS(true);
+    
 
     // configure and read current
     if (!config_i2c(CURRENT_CONFIG)) return; // No need for an error message here; that is handled in config_current
@@ -118,6 +122,10 @@ int ADC_FD::open_file() {
     if ((fd = open(path.c_str(), O_RDWR)) == -1) {
         return -1;
     }
+    if (ioctl(fd, I2C_SLAVE, BMS_ADDRESS) < 0) {
+        return -1;
+    }
+
     return fd;
 }
 

@@ -15,6 +15,7 @@ using namespace rclcpp;
 
 class ADC_FD : public Path_FD {
 protected:
+    const int BMS_ADDRESS = 0x48;
     int open_file() override;
 public:
     ADC_FD(std::string path);
