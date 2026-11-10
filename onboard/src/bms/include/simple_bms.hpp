@@ -17,8 +17,34 @@ class ADC_FD : public Path_FD {
 protected:
     const int BMS_ADDRESS = 0x48;
     int open_file() override;
+    
+    struct ConfigValues {
+        uint8_t conf_reg; // Config register
+        uint8_t lsb; // See pg 25-26 of the ads1115.pdf (or below) for what the individual bits mean
+        uint8_t msb;
+        uint8_t conv_reg_val;
+    };
+     const ConfigValues VOLTAGE_CONFIG = { 
+            // AIN_P and AIN_N denote the selected positive and negative inputs.
+            /* Value of 8142 -- 1000001101000010
+            1   - Start a single conversion
+            000 - Input multiplexer configuration - AIN_P = AIN0 and AIN_N = AIN1
+            000 - FSR=+- 6.144V
+            1   - Operate in single-shot mode
+            010 - Data rate of 32SPS
+            0   - Comparator operating mode: Traditional
+            0   - Alert/ready pin polarity: Active low
+            0   - Assert pin does not latch
+            10  - Assert the alert/ready pin after four consecutive conversions which exceed the limit
+            */
+            0x01,
+            0x42,
+            0x81,
+            0x00
+    };
 public:
     ADC_FD(std::string path);
+    bool config(int fd, ConfigValues conf);
 };
 
 class SimpleBMS : public rclcpp::Node {
@@ -30,7 +56,7 @@ class SimpleBMS : public rclcpp::Node {
         };
         
         
-        SimpleBMS(std::unique_ptr<FD_Interface> pico_fd);
+        SimpleBMS(std::unique_ptr<FD_Interface> bms_fd);
         ~SimpleBMS();
        
         struct ConfigValues {

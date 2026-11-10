@@ -20,14 +20,16 @@ SimpleBMS::SimpleBMS (std::unique_ptr<FD_Interface> bms_fd) :
 
 SimpleBMS::~SimpleBMS() {
     // change i2c_fd to arbitary fd 
-    /*
+    
     if (bms_fd >= 0) {
-        close(bms_fd);
+        close(bms_fd->get_read_fd());
+        close(bms_fd->get_write_fd());
     }
-    */
+    /*
     if (i2c_fd >= 0) {
         close(i2c_fd);
     }
+        */
 }
 
 
@@ -125,8 +127,33 @@ int ADC_FD::open_file() {
     if (ioctl(fd, I2C_SLAVE, BMS_ADDRESS) < 0) {
         return -1;
     }
-
+    if (!config(fd, VOLTAGE_CONFIG)) {
+        return -1;
+    }
     return fd;
+}
+
+bool ADC_FD::config(int fd, ConfigValues conf) {
+    uint8_t config[3];
+    config[0] = conf.conf_reg;
+    config[1] = conf.lsb;
+    config[2] = conf.msb;
+
+    if (write(fd, config, 3) != 3) {
+        std::cout << "error: Could not write to config" << std::endl;
+        return false;
+    }
+
+    // wait for conversion
+    usleep(10000); //10ms in microseconds
+
+    // read from conversion register
+    uint8_t conv_reg[1] = {conf.conv_reg_val};
+    if (write(fd, conv_reg, 1) != 1) {
+        std::cerr << "error: Failed to set pointer to conversion register" << std::endl;
+        return false;
+    }
+    return true;
 }
 
 #ifndef ENABLE_TESTING
