@@ -490,19 +490,15 @@ void Dashboard_TUI::refresh_display(int numArgs, ...) {
     display_mutex.unlock();
 }
 
-void Dashboard_TUI::jump_to_column(int col_number) {
-    std::string column_string = "\x1B[" + std::to_string(col_number) + "G";
-    write(STDOUT_FILENO, column_string.c_str(), column_string.length());
-}
-
 void Dashboard_TUI::reset_cursor_pos() {
     write(STDOUT_FILENO, "\x1B[H", 3);
 }
 
 void Dashboard_TUI::write_header(std::string header) {
     tui_printf("\x1B[1m"); // set bold
-    tui_printf((header + '\n').c_str());
+    tui_printf(header.c_str());
     tui_printf("\n\x1B[22m"); // unset bold
+    fflush(stdout);
 }
 
 void Dashboard_TUI::write_selectable_header(std::string header, int current_mode, int active_mode) {
@@ -557,7 +553,7 @@ void Dashboard_TUI::display_escalatable_critical_status(int current_mode, int cr
     }
 }
 
-void Dashboard_TUI::display_escalatable_warning_status(int current_mode, int warning_mode, bool heartbeat, const int col_number) {
+void Dashboard_TUI::display_escalatable_warning_status(int current_mode, int warning_mode, bool heartbeat) {
     if (current_mode == warning_mode) {
         display_warning_status(heartbeat);
     }
@@ -566,77 +562,76 @@ void Dashboard_TUI::display_escalatable_warning_status(int current_mode, int war
     }
 }
 
-void Dashboard_TUI::display_mission_manager(int current_mux_mode, int warning_mode, bool heartbeat, bool ready, const int col_number) {
+void Dashboard_TUI::display_mission_manager(int current_mux_mode, int warning_mode, bool heartbeat, bool ready) {
     if (!heartbeat || !ready) {
-        display_escalatable_warning_status(current_mux_mode, warning_mode, heartbeat, col_number);
+        display_escalatable_warning_status(current_mux_mode, warning_mode, heartbeat);
     } else {
-        display_ready(col_number);
+        display_ready();
     }
 }
 
-void Dashboard_TUI::display_ready(const int col_number) {
-    jump_to_column(col_number);
+void Dashboard_TUI::display_ready() {
     write(STDOUT_FILENO, "\x1B[48;5;34;97m", 13); // set green background, white foreground
-    printf("=========== Ready ==========\n");
+    tui_printf("=========== Ready ==========\n");
     write(STDOUT_FILENO, "\x1B[0m", 4); // reset style
 }
 
 
 /* Note: this function returns cursor to its original position so sub-columns can be next to each other */
-void Dashboard_TUI::display_pwms(std::array<int,8> pwms, const int col_number, std::chrono::time_point<std::chrono::steady_clock> timestamp) {
+void Dashboard_TUI::display_pwms(std::array<int,8> pwms, std::chrono::time_point<std::chrono::steady_clock> timestamp) {
     write(STDOUT_FILENO, "\x1B[s", 3); // Save cursor position
-    printf("\n");
+    tui_printf("\n");
     if (pwms[0] == 0) { // no pwms to display
         for (int i = 0; i < 8; i ++) {
-            jump_to_column(col_number);
-            printf("|\n");
+            tui_printf("|\n");
         }
         write(STDOUT_FILENO, "\x1B[u", 3); // Restore cursor position
         return;
     }
     for (int i = 0; i < 8; i++) {
-        jump_to_column(col_number);
-        printf("| ");
+        tui_printf("| ");
         char buf[32] = {0};
         snprintf(buf, 32, "%d", pwms[i]);
         display_blue_if_fresh(timestamp, std::string(buf));
-        printf("\n");
+        tui_printf("\n");
     }
     write(STDOUT_FILENO, "\x1B[u", 3); // Restore cursor position
 }
 
-void Dashboard_TUI::fill_right_col(const int col_number) {
+void Dashboard_TUI::fill_right_col() {
     for (int i = 0; i < 9; i++) {
-        jump_to_column(col_number);
-        printf("|\n");
+        tui_printf("|\n");
     }
 }
 
 void Dashboard_TUI::display_all_pwms(PWM_Data pwms_cmd, PWM_Data pwms_cli, PWM_Data pwms_ctrl, PWM_Data pwms_echo) {
-    printf("| - CMD - ");
-    display_pwms(pwms_cmd.pwms, col_2, pwms_cmd.timestamp);
-    jump_to_column(col_2_1);
-    printf("| - CLI - ");
-    display_pwms(pwms_cli.pwms, col_2_1, pwms_cli.timestamp);
-    jump_to_column(col_2_2);
-    printf("| - CTRL - ");
-    display_pwms(pwms_ctrl.pwms, col_2_2, pwms_ctrl.timestamp);
-    jump_to_column(col_2_3);
-    printf("| - ECHO - |");
-    display_pwms(pwms_echo.pwms, col_2_3, pwms_echo.timestamp);
-    fill_right_col(col_2_4);
+    tui_printf("| - CMD - ");
+    display_pwms(pwms_cmd.pwms, pwms_cmd.timestamp);
+    set_column(col_2_1);
+    tui_printf("| - CLI - ");
+    display_pwms(pwms_cli.pwms, pwms_cli.timestamp);
+    set_column(col_2_2);
+    tui_printf("| - CTRL - ");
+    display_pwms(pwms_ctrl.pwms, pwms_ctrl.timestamp);
+    set_column(col_2_3);
+    tui_printf("| - ECHO - |");
+    display_pwms(pwms_echo.pwms, pwms_echo.timestamp);
+    set_column(col_2_4);
+    fill_right_col();
+    set_column(col_2);
 }
 
-void Dashboard_TUI::display_connection_info(bool connection_ok, double seconds_since_ping, double ping_rtt, const int col_number) {
-    jump_to_column(col_number);
+void Dashboard_TUI::display_connection_info(bool connection_ok, double seconds_since_ping, double ping_rtt) {
     if (!connection_ok) {
         write(STDOUT_FILENO, "\x1B[5;7m", 6); // blinking, inverted
         write(STDOUT_FILENO, "\x1B[31;107m", 9); // set red foreground, white background
-        printf("========== No robot connection! Check ethernet cable. =========\n");
+        tui_printf("========== No robot connection! Check ethernet cable. =========\n");
         write(STDOUT_FILENO, "\x1B[0m", 4); // reset style
     }
     else {
-        printf("Most recent ping: rtt %07.3lfms | %04.1lf seconds since last ping.\n", ping_rtt, seconds_since_ping);
+        char buf[100] = {0};
+        snprintf(buf, 69, "Most recent ping: rtt %07.3lfms | %04.1lf seconds since last ping.\n", ping_rtt, seconds_since_ping);
+        tui_printf(buf);
     }
 }
 
@@ -650,7 +645,7 @@ std::string Dashboard_TUI::format_floating_point(double coordinate) {
     return std::string(buf);
 }
 
-void Dashboard_TUI::display_vr(const int col_number, DVL_VR_Data velocity) {
+void Dashboard_TUI::display_vr(DVL_VR_Data velocity) {
     tui_printf("Velocity:    | x: ");
     display_blue_if_fresh(velocity.timestamp, format_floating_point(velocity.x));
     tui_printf(" | y: ");
@@ -663,7 +658,7 @@ void Dashboard_TUI::display_vr(const int col_number, DVL_VR_Data velocity) {
 }
 
 
-void Dashboard_TUI::display_drr(const int col_number, DVL_Data position, DVL_Data orientation) {
+void Dashboard_TUI::display_drr(DVL_Data position, DVL_Data orientation) {
     tui_printf("Position:    | x: ");
     display_blue_if_fresh(position.timestamp, format_floating_point(position.x));
     tui_printf(" | y: ");
@@ -682,24 +677,24 @@ void Dashboard_TUI::display_drr(const int col_number, DVL_Data position, DVL_Dat
 }
 
 void Dashboard_TUI::display_commands() {
-    printf("\n====================================== Commands ======================================\n");
+    tui_printf("\n====================================== Commands ======================================\n");
     write(STDOUT_FILENO, "\x1B[s", 3); // Save cursor position
-    printf("Mux Control:\n");
-    printf("[0]: Disabled\n");
-    printf("[1]: CLI mode\n");
-    printf("[2]: Matlab mode\n");
-    printf("[3]: Echo mode\n");
-    printf("\nEnter command (Q to quit) > ");
+    tui_printf("Mux Control:\n");
+    tui_printf("[0]: Disabled\n");
+    tui_printf("[1]: CLI mode\n");
+    tui_printf("[2]: Matlab mode\n");
+    tui_printf("[3]: Echo mode\n");
+    tui_printf("\nEnter command (Q to quit) > ");
     fflush(stdout);
 
-    column_inline = col_2;
+    set_column(col_2);
     write(STDOUT_FILENO, "\x1B[u", 3); // Restore cursor position
     tui_printf("Sensor Resets:\n");
     tui_printf("[A]: Reset DRR\n");
     tui_printf("[B]: Reset Gyro\n");
     tui_printf("[C]: Reset Matlab Pos\n");
     
-    column_inline = col_2_3;
+    set_column(col_2_3);
     write(STDOUT_FILENO, "\x1B[u", 3); // Restore cursor position
     fflush(stdout);
     tui_printf("Robot Control:\n");
@@ -708,7 +703,7 @@ void Dashboard_TUI::display_commands() {
     tui_printf("[F]: Revive Pico\n");
 }
 
-void Dashboard_TUI::display_mission_status(const int col_number, Mission_Status status) {
+void Dashboard_TUI::display_mission_status(Mission_Status status) {
     std::string current_mission_file = std::string(status.current_mission_file);
     std::string current_command = std::string(status.current_command);
 
@@ -719,29 +714,24 @@ void Dashboard_TUI::display_mission_status(const int col_number, Mission_Status 
         current_command.push_back(' ');
     }
 
-    jump_to_column(col_number);
-    printf("File: ");
+    tui_printf("File: ");
     display_blue_if_fresh(status.timestamp, current_mission_file);
-    printf("\n");
+    tui_printf("\n");
 
-    jump_to_column(col_number);
-    printf("Command: ");
+    tui_printf("Command: ");
     display_blue_if_fresh(status.timestamp, current_command);
-    printf("\n");
+    tui_printf("\n");
 
-    jump_to_column(col_number);
-    printf("Total seconds: ");
+    tui_printf("Total seconds: ");
     display_blue_if_fresh(status.timestamp, format_floating_point(status.duration_seconds));
-    printf("\n");
+    tui_printf("\n");
 
-    jump_to_column(col_number);
-    printf("Seconds left: ");
+    tui_printf("Seconds left: ");
     display_blue_if_fresh(status.timestamp, format_floating_point(status.seconds_remaining));
-    printf("\n");
+    tui_printf("\n");
 }
 
 void Dashboard_TUI::display_debug(
-    const int col_number, 
     int num_flags,
     Debug_Flag_Msg* flags, 
     Debug_State_Data* actual_point, 
@@ -749,10 +739,11 @@ void Dashboard_TUI::display_debug(
 ) {
     for(int i = 0; i < num_flags; i++) {
         std::string name = std::string(flags[i].name);
-        jump_to_column(col_number);
-        printf("%-17s", (name + ":").c_str());
+        char buf[18] = {0};
+        snprintf(buf, 18, "%-17s", (name + ":").c_str());
+        tui_printf(buf);
         display_blue_if_fresh(flags[i].timestamp, format_floating_point(flags[i].value));
-        printf("\n");
+        tui_printf("\n");
     }
 
     std::unique_ptr<std::string[]> states(new std::string[]{
@@ -761,38 +752,35 @@ void Dashboard_TUI::display_debug(
         "vbx", "vby", "vbz",
         "wbx", "wby", "wbz"});
     
-    printf("\n");
-    jump_to_column(col_number + 9);
-    printf("actual       setpt.\n\n");
+    tui_printf("\n");
+    tui_printf("         actual       setpt.\n\n");
 
     int state_idx = 0;
     for(int i = 0; i < 4; i++) {
         Debug_State_Data actual = actual_point[i];
         Debug_State_Data setpoint = set_point[i];
 
-        jump_to_column(col_number);
-        printf("%-7s", (states[state_idx++] + ":").c_str());
+        char buf[8];
+        snprintf(buf, 8, "%-7s", (states[state_idx++] + ":").c_str());
+        tui_printf(buf);
         display_blue_if_fresh(actual.timestamp, format_floating_point(actual.x));
-        printf(" | ");
-        jump_to_column(col_number + 7 + 10);
+        tui_printf(" | ");
         display_blue_if_fresh(setpoint.timestamp, format_floating_point(setpoint.x));
-        printf("\n");
+        tui_printf("\n");
 
-        jump_to_column(col_number);
-        printf("%-7s", (states[state_idx++] + ":").c_str());
+        snprintf(buf, 8, "%-7s", (states[state_idx++] + ":").c_str());
+        tui_printf(buf);
         display_blue_if_fresh(actual.timestamp, format_floating_point(actual.y));
-        printf(" | ");
-        jump_to_column(col_number + 7 + 10);
+        tui_printf(" | ");
         display_blue_if_fresh(setpoint.timestamp, format_floating_point(setpoint.y));
-        printf("\n");
+        tui_printf("\n");
 
-        jump_to_column(col_number);
-        printf("%-7s", (states[state_idx++] + ":").c_str());
+        snprintf(buf, 8, "%-7s", (states[state_idx++] + ":").c_str());
+        tui_printf(buf);
         display_blue_if_fresh(actual.timestamp, format_floating_point(actual.z));
-        printf(" | ");
-        jump_to_column(col_number + 7 + 10);
+        tui_printf(" | ");
         display_blue_if_fresh(setpoint.timestamp, format_floating_point(setpoint.z));
-        printf("\n");
+        tui_printf("\n");
     }
     write(STDOUT_FILENO, "\x1B[39;22m\n", 9);
 }
@@ -893,19 +881,19 @@ void Dashboard_TUI::display_tui(va_list args) {
 
     write_header("dvl");
     display_critical_status(dvl_heartbeat);
-    display_vr(col_1, velocity);
-    display_drr(col_1, position, orientation);
+    display_vr(velocity);
+    display_drr(position, orientation);
     tui_printf("\n");
 
     write_header("Robot Connection Status");
-    display_connection_info(ping_ok, seconds_since_ping, ping_rtt, col_1);
+    display_connection_info(ping_ok, seconds_since_ping, ping_rtt);
 
-    printf("\n");
-    printf("Systems in flashing red are critical and should be fixed immediately.\n");
-    printf("Systems in flashing orange might be critical and should be fixed if needed.\n");
-    printf("Systems in flashing white are not connected, but are noncritical and can probably be ignored.\n");
-    printf("The current control mode is indicated by whether the mode is highlighted by = [mode] =.\n");
-    printf("Fresh PWM and DVL data is shown bolded in blue. After 0.5s it becomes stale and returns to normal.\n ");
+    tui_printf("\n");
+    tui_printf("Systems in flashing red are critical and should be fixed immediately.\n");
+    tui_printf("Systems in flashing orange might be critical and should be fixed if needed.\n");
+    tui_printf("Systems in flashing white are not connected, but are noncritical and can probably be ignored.\n");
+    tui_printf("The current control mode is indicated by whether the mode is highlighted by = [mode] =.\n");
+    tui_printf("Fresh PWM and DVL data is shown bolded in blue. After 0.5s it becomes stale and returns to normal.\n ");
 
     display_commands();  
     
@@ -914,28 +902,31 @@ void Dashboard_TUI::display_tui(va_list args) {
     set_column(col_2);
     write_header("PWMs");
     display_all_pwms(pwms_cmd, pwms_cli, pwms_ctrl, pwms_echo);
-    printf("\n");
+    tui_printf("\n");
 
     write_header("Joystick");
     display_escalatable_critical_status(current_mux_mode, 2, joystick_heartbeat);
-    printf("\n");
+    tui_printf("\n");
 
     write_header("mission_manager");
-    display_mission_manager(current_mux_mode, 2, mission_manager_heartbeat, ready, col_2);
+    display_mission_manager(current_mux_mode, 2, mission_manager_heartbeat, ready);
 
     reset_cursor_pos();
 
     set_column(col_3);
     write_header("Mission Status");
-    display_mission_status(col_3, status);
-    printf("\n");
+    display_mission_status(status);
+    tui_printf("\n");
 
     write_header("Matlab Debug");
-    display_debug(col_3, num_flags, debug_flags, debug_states_actual, debug_states_setpt);
-
+    display_debug(num_flags, debug_flags, debug_states_actual, debug_states_setpt);
+    
+    set_column(col_1 + 29);
     write(STDOUT_FILENO, "\x1B[38;29H", 8); // jumpt to prompt (line/column)
     write(STDOUT_FILENO, "\x1B[?25h", 6); // visible cursor
-    printf("%s", current_input.c_str());
+    char buf[264] = {0};
+    snprintf(buf, 264, "%s", current_input.c_str());
+    tui_printf(buf);
     write(STDOUT_FILENO, "\x1B[0K", 4); // erase until end of line (removes backspaced characters)
 
     fflush(stdout);

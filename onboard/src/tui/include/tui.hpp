@@ -66,7 +66,6 @@ class Dashboard_TUI : public TUI_Interface {
         virtual void process_input() override;
         virtual void refresh_display(int numArgs, ...) override;
     private:
-        void jump_to_column(const int col_number);
         void reset_cursor_pos();
         void write_header(std::string header);
         void write_selectable_header(std::string header, int current_mode, int active_mode);
@@ -76,18 +75,18 @@ class Dashboard_TUI : public TUI_Interface {
         void display_warning_status(bool heartbeat);
         void display_noncritical_status(bool heartbeat);
         void display_escalatable_critical_status(int current_mode, int critical_mode, bool heartbeat);
-        void display_escalatable_warning_status(int current_mode, int warning_mode, bool heartbeat, const int col_number);
-        void display_mission_manager(int current_mux_mode, int warning_mode, bool heartbeat, bool ready, const int col_number);
-        void display_ready(const int col_number);
-        void display_pwms(std::array<int,8> pwms, const int col_number, std::chrono::time_point<std::chrono::steady_clock> timestamp);
-        void fill_right_col(const int col_number);
+        void display_escalatable_warning_status(int current_mode, int warning_mode, bool heartbeat);
+        void display_mission_manager(int current_mux_mode, int warning_mode, bool heartbeat, bool ready);
+        void display_ready();
+        void display_pwms(std::array<int,8> pwms, std::chrono::time_point<std::chrono::steady_clock> timestamp);
+        void fill_right_col();
         void display_all_pwms(PWM_Data pwms_cmd, PWM_Data pwms_cli, PWM_Data pwms_ctrl, PWM_Data pwms_echo);
-        void display_connection_info(bool connection_ok, double seconds_since_ping, double ping_rtt, const int col_number);
-        void display_vr(const int col_number, DVL_VR_Data velocity);
-        void display_drr(const int col_number, DVL_Data position, DVL_Data orientation);
+        void display_connection_info(bool connection_ok, double seconds_since_ping, double ping_rtt);
+        void display_vr(DVL_VR_Data velocity);
+        void display_drr(DVL_Data position, DVL_Data orientation);
         void display_commands();
-        void display_mission_status(const int col_number, Mission_Status status);
-        void display_debug(const int col_number, int num_flags, Debug_Flag_Msg* flags, Debug_State_Data* actual_point, Debug_State_Data* set_point);
+        void display_mission_status(Mission_Status status);
+        void display_debug(int num_flags, Debug_Flag_Msg* flags, Debug_State_Data* actual_point, Debug_State_Data* set_point);
         std::string format_floating_point(double coordinate);
         std::chrono::time_point<std::chrono::steady_clock> fresh_evaluation_time;
         const int col_1 = 0;
