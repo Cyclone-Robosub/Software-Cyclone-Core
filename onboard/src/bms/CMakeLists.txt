@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(custom_interfaces REQUIRED)
+find_package(fd_interface REQUIRED)
 
 # Include directories
 include_directories(
@@ -21,6 +22,7 @@ add_executable(bms src/simple_bms.cpp)
 ament_target_dependencies(bms
   rclcpp
   custom_interfaces
+  fd_interface
 )
 
 # Install main executable
@@ -37,6 +39,7 @@ if(BUILD_TESTING)
   ament_target_dependencies(${PROJECT_NAME}_lib
     rclcpp
     custom_interfaces
+    fd_interface
   )
   target_include_directories(${PROJECT_NAME}_lib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -54,6 +57,7 @@ if(BUILD_TESTING)
   ament_target_dependencies(${PROJECT_NAME}_test
     rclcpp
     custom_interfaces
+    fd_interface
   )
 endif()
 

@@ -12,6 +12,8 @@
 
   <depend>rclcpp</depend>
   <depend>custom_interfaces</depend>
+  <depend>fd_interface</depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

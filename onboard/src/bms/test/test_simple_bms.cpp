@@ -18,8 +18,8 @@ protected:
     rclcpp::Subscription<custom_interfaces::msg::Battery>::SharedPtr bms_subscriber;
     int write_pipe_fds[2];  // For when BMS needs to write to the ADC. [0] = read end, [1] = write end
     int read_pipe_fds[2];  // For when BMS needs to read from the ADC. [0] = read end, [1] = write end
-    int voltage_reading;
-    int current_reading;
+    float voltage_reading;
+    float current_reading;
 
     void SetUp() override {
         // Initialize ROS2
@@ -107,7 +107,7 @@ protected:
         node = std::make_shared<SimpleBMS>( 
             std::move(pipe_fd)  // Write end of pipe
         );
-        bms_subscriber = node->create_subscription<custom_interfaces::msg::Battery>("bms", 10, std::bind(&TestSimpleBMS::bms_callback, this, std::placeholders::_1, std::placeholders::_2));
+        bms_subscriber = node->create_subscription<custom_interfaces::msg::Battery>("bms", 10, std::bind(&TestSimpleBMS::bms_callback, this, std::placeholders::_1));
     }
 };
 
@@ -120,12 +120,15 @@ TEST_F(TestSimpleBMS, BMSConstruction) {
         create_node_with_params();
     });
     ASSERT_NE(node, nullptr);
-    EXPECT_EQ(node->get_name(), std::string("SimpleBMS"));
+    EXPECT_EQ(node->get_name(), std::string("simple_bms"));
 }
 TEST_F(TestSimpleBMS, TestReadings) {
     create_node_with_params();
     write_serial_message("10");
-    write_serial_message("20");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
     ASSERT_EQ(voltage_reading, 10);
+    write_serial_message("20");
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
     ASSERT_EQ(current_reading, 20);
 }

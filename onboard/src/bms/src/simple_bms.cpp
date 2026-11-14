@@ -5,7 +5,8 @@ using namespace std::chrono_literals;
 SimpleBMS::SimpleBMS (std::unique_ptr<FD_Interface> bms_fd) :
     Node("simple_bms"),
     bms_fd(std::move(bms_fd)) 
-{
+{   
+    std::cout << "1" << std::endl;
     /*
     if (init_i2c()){
         // Timer to check voltage & current values at a frequency of 100 hz
@@ -35,6 +36,7 @@ SimpleBMS::~SimpleBMS() {
 
 bool SimpleBMS::init_i2c() {
     // Open and connect to the ADC
+    std::cout << "Hi" << std::endl;
     i2c_fd = open(I2C_FD, O_RDWR);
     
     if (i2c_fd < 0) {
@@ -50,6 +52,7 @@ bool SimpleBMS::init_i2c() {
 }
 
 bool SimpleBMS::config_i2c(SimpleBMS::ConfigValues conf){
+    std::cout << "hi" << std::endl;
     uint8_t config[3];
     config[0] = conf.conf_reg;
     config[1] = conf.lsb;
@@ -121,6 +124,7 @@ ADC_FD::ADC_FD (std::string path) : Path_FD(path) {
 
 int ADC_FD::open_file() {
     int fd;
+    std::cout << "hiii" << std::endl;
     if ((fd = open(path.c_str(), O_RDWR)) == -1) {
         return -1;
     }
@@ -134,6 +138,7 @@ int ADC_FD::open_file() {
 }
 
 bool ADC_FD::config(int fd, ConfigValues conf) {
+    std::cout << "hi2" << std::endl;
     uint8_t config[3];
     config[0] = conf.conf_reg;
     config[1] = conf.lsb;
