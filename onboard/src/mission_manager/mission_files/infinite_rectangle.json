@@ -1,0 +1,147 @@
+{
+    "commands": [
+        {
+            "reference": "side_1",
+            "action": "drive_to_world_waypoint",
+            "parameters": {
+                "goal_waypoint": {
+                    "x": 2.5,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "waypoint_mask": {
+                    "x": true,
+                    "y": true,
+                    "z": false,
+                    "roll": false,
+                    "pitch": false,
+                    "yaw": false
+                },
+                "tolerance": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "hold_time": 5.0,
+                "timeout": 30
+            }
+        },
+        {
+            "reference": "side_2",
+            "action": "drive_to_world_waypoint",
+            "parameters": {
+                "goal_waypoint": {
+                    "x": 2.5,
+                    "y": 1.5,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "waypoint_mask": {
+                    "x": true,
+                    "y": true,
+                    "z": false,
+                    "roll": false,
+                    "pitch": false,
+                    "yaw": false
+                },
+                "tolerance": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "hold_time": 5.0,
+                "timeout": 30
+            }
+        },
+        {
+            "reference": "side_3",
+            "action": "drive_to_world_waypoint",
+            "parameters": {
+                "goal_waypoint": {
+                    "x": 0,
+                    "y": 1.5,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "waypoint_mask": {
+                    "x": true,
+                    "y": true,
+                    "z": false,
+                    "roll": false,
+                    "pitch": false,
+                    "yaw": false
+                },
+                "tolerance": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "hold_time": 5.0,
+                "timeout": 30
+            }
+        },
+        {
+            "reference": "side_4",
+            "action": "drive_to_world_waypoint",
+            "parameters": {
+                "goal_waypoint": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "waypoint_mask": {
+                    "x": true,
+                    "y": true,
+                    "z": false,
+                    "roll": false,
+                    "pitch": false,
+                    "yaw": false
+                },
+                "tolerance": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "roll": 0,
+                    "pitch": 0,
+                    "yaw": 0
+                },
+                "hold_time": 5.0,
+                "timeout": 30
+            }
+        }
+    ],
+    "tree": {
+        "ref": "side_1",
+        "next": {
+            "ref": "side_2",
+            "next": {
+                "ref": "side_3",
+                "next": {
+                    "ref": "side_4",
+                    "next": {
+                        "ref": "side_1"
+                    }
+                }
+            }
+        }
+    }
+}
