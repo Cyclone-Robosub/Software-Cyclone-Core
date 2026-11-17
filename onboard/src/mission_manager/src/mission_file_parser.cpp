@@ -246,12 +246,14 @@ std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> MissionFileParser
     json ref = tree["ref"];
     json next = tree["next"];
     json failure = tree["failure"];
+    bool used_this_round = false;
 
     if (next != nullptr) {
         updated_registry = parse_tree(next, updated_registry);
         // Prevent double-defined tree nodes
         if (!updated_registry[ref].first) {
-            updated_registry[next["ref"]].first = true;
+            updated_registry[ref].first = true;
+            used_this_round = true;
             updated_registry[ref].second->set_next(updated_registry[next["ref"]].second);
         } else {
             throw std::runtime_error("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
@@ -260,8 +262,8 @@ std::map<std::string,std::pair<bool,std::shared_ptr<Command>>> MissionFileParser
     if (failure != nullptr) {
         updated_registry = parse_tree(failure, updated_registry);
         // Prevent double-defined tree nodes
-        if (!updated_registry[ref].first) {
-            updated_registry[failure["ref"]].first = true;
+        if (!updated_registry[ref].first || used_this_round) {
+            updated_registry[ref].first = true;
             updated_registry[ref].second->set_failure(updated_registry[failure["ref"]].second);
         } else {
             throw std::runtime_error("Uh oh, bad tree! You defined a node twice. Don't do that!\n");
