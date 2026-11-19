@@ -9,13 +9,17 @@ Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
                          std::unique_ptr<FD_Interface> vr_fd,
                          std::unique_ptr<FD_Interface> imu_fd,
                          std::unique_ptr<FD_Interface> pwm_fd,
-                         std::unique_ptr<FD_Interface> events_fd) : 
+                         std::unique_ptr<FD_Interface> events_fd,
+                        std::unique_ptr<FD_Interface> debug_actual_fd,
+                        std::unique_ptr<FD_Interface> debug_setpoint_fd) :
     Node("data_logger"),
     drr_fd(std::move(drr_fd)),
     vr_fd(std::move(vr_fd)),
     imu_fd(std::move(imu_fd)),
     pwm_fd(std::move(pwm_fd)),
-    events_fd(std::move(events_fd))
+    events_fd(std::move(events_fd)),
+    debug_actual_fd(std::move(debug_actual_fd)),
+    debug_setpoint_fd(std::move(debug_setpoint_fd))
      {
     drr_subscription = this->create_subscription<custom_interfaces::msg::DRR>(
         "dead_reck_report", 1, 
@@ -38,6 +42,26 @@ Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
         "current_command", 1,
         std::bind(&Data_Logger::command_received_callback, this, std::placeholders::_1)
     );
+    matlab_debug_actual_subscription = this->create_subscription<custom_interfaces::msg::DebugState>(
+        "matlab_debug_actual_pt", 1,
+        std::bind(&Data_Logger::matlab_debug_actual_received_callback, this, std::placeholders::_1)
+    );
+    matlab_debug_setpoint_subscription = this->create_subscription<custom_interfaces::msg::DebugState>(
+        "matlab_debug_set_pt", 1,
+        std::bind(&Data_Logger::matlab_debug_setpoint_received_callback, this, std::placeholders::_1)
+    );
+    matlab_debug_flag_0_subscription = this->create_subscription<custom_interfaces::msg::DebugFlag>(
+        "matlab_debug_flag_0", 1,
+        std::bind(&Data_Logger::matlab_debug_flag_received_callback, this, std::placeholders::_1)
+    );
+    matlab_debug_flag_1_subscription = this->create_subscription<custom_interfaces::msg::DebugFlag>(
+        "matlab_debug_flag_1", 1,
+        std::bind(&Data_Logger::matlab_debug_flag_received_callback, this, std::placeholders::_1)
+    );
+    matlab_debug_flag_2_subscription = this->create_subscription<custom_interfaces::msg::DebugFlag>(
+        "matlab_debug_flag_2", 1,
+        std::bind(&Data_Logger::matlab_debug_flag_received_callback, this, std::placeholders::_1)
+    );
     // TODO: any additional sensors added in the future, manipulator/dropper commands
     
     std::string drr_header = "time,position_x,position_y,position_z,angle_x,angle_y,angle_z,pos_std\n";
@@ -45,11 +69,14 @@ Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
     std::string imu_header = "time,angular_velocity_x,angular_velocity_y,angular_velocity_z,angular_velocity_covariance_c11,angular_velocity_covariance_c12,angular_velocity_covariance_c13,angular_velocity_covariance_c21,angular_velocity_covariance_c22,angular_velocity_covariance_c23,angular_velocity_covariance_c31,angular_velocity_covariance_c32,angular_velocity_covariance_c33,linear_acceleration_x,linear_acceleration_y,linear_acceleration_z,linear_acceleration_covariance_c11,linear_acceleration_covariance_c12,linear_acceleration_covariance_c13,linear_acceleration_covariance_c21,linear_acceleration_covariance_c22,linear_acceleration_covariance_c23,linear_acceleration_covariance_c31,linear_acceleration_covariance_c32,linear_acceleration_covariance_c33,magnetic_field_x,magnetic_field_y,magnetic_field_z,magnetic_field_covariance_c11,magnetic_field_covariance_c12,magnetic_field_covariance_c13,magnetic_field_covariance_c21,magnetic_field_covariance_c22,magnetic_field_covariance_c23,magnetic_field_covariance_c31,magnetic_field_covariance_c32,magnetic_field_covariance_c33,fluid_pressure,fluid_pressure_variance,pose_orientation_x,pose_orientation_y,pose_orientation_z,pose_orientation_w,pose_covariance_c11,pose_covariance_c12,pose_covariance_c13,pose_covariance_c14,pose_covariance_c15,pose_covariance_c16,pose_covariance_c21,pose_covariance_c22,pose_covariance_c23,pose_covariance_c24,pose_covariance_c25,pose_covariance_c26,pose_covariance_c31,pose_covariance_c32,pose_covariance_c33,pose_covariance_c34,pose_covariance_c35,pose_covariance_c36,pose_covariance_c41,pose_covariance_c42,pose_covariance_c43,pose_covariance_c44,pose_covariance_c45,pose_covariance_c46,pose_covariance_c51,pose_covariance_c52,pose_covariance_c53,pose_covariance_c54,pose_covariance_c55,pose_covariance_c56,pose_covariance_c61,pose_covariance_c62,pose_covariance_c63,pose_covariance_c64,pose_covariance_c65,pose_covariance_c66,twist_angular_x,twist_angular_y,twist_angular_z,twist_covariance_c11,twist_covariance_c12,twist_covariance_c13,twist_covariance_c14,twist_covariance_c15,twist_covariance_c16,twist_covariance_c21,twist_covariance_c22,twist_covariance_c23,twist_covariance_c24,twist_covariance_c25,twist_covariance_c26,twist_covariance_c31,twist_covariance_c32,twist_covariance_c33,twist_covariance_c34,twist_covariance_c35,twist_covariance_c36,twist_covariance_c41,twist_covariance_c42,twist_covariance_c43,twist_covariance_c44,twist_covariance_c45,twist_covariance_c46,twist_covariance_c51,twist_covariance_c52,twist_covariance_c53,twist_covariance_c54,twist_covariance_c55,twist_covariance_c56,twist_covariance_c61,twist_covariance_c62,twist_covariance_c63,twist_covariance_c64,twist_covariance_c65,twist_covariance_c66,roll,pitch\n";
     std::string pwm_header = "time,thruster_0,thruster_1,thruster_2,thruster_3,thruster_4,thruster_5,thruster_6,thruster_7\n";
     std::string events_header = "time,event,extra_0,extra_1\n";
+    std::string debug_state_header = "time,xi,yi,zi,roll,pitch,yaw,vbx,vby,vbz,wbx,wby,wbz\n";
     write(this->drr_fd->get_write_fd(), drr_header.c_str(), drr_header.length());
     write(this->vr_fd->get_write_fd(), vr_header.c_str(), vr_header.length());
     write(this->imu_fd->get_write_fd(), imu_header.c_str(), imu_header.length());
     write(this->pwm_fd->get_write_fd(), pwm_header.c_str(), pwm_header.length());
     write(this->events_fd->get_write_fd(), events_header.c_str(), events_header.length());
+    write(this->debug_actual_fd->get_write_fd(), debug_state_header.c_str(), debug_state_header.length());
+    write(this->debug_setpoint_fd->get_write_fd(), debug_state_header.c_str(), debug_state_header.length());
 }
 
 void Data_Logger::dead_reck_report_received_callback(custom_interfaces::msg::DRR::UniquePtr drr_msg) {

@@ -7,6 +7,8 @@
 #include <custom_interfaces/msg/imu.hpp>
 #include <custom_interfaces/msg/pwms.hpp>
 #include <custom_interfaces/msg/command.hpp>
+#include <custom_interfaces/msg/debug_state.hpp>
+#include <custom_interfaces/msg/debug_flag.hpp>
 #include "std_msgs/msg/bool.hpp"
 #include "fd_interface.hpp"
 #include <mutex>
@@ -29,7 +31,9 @@ public:
                 std::unique_ptr<FD_Interface> vr_fd,
                 std::unique_ptr<FD_Interface> imu_fd,
                 std::unique_ptr<FD_Interface> pwm_fd,
-                std::unique_ptr<FD_Interface> events_fd);
+                std::unique_ptr<FD_Interface> events_fd,
+                std::unique_ptr<FD_Interface> debug_actual_fd,
+                std::unique_ptr<FD_Interface> debug_setpoint_fd);
     static std::string get_current_time();
 
 private:
@@ -39,6 +43,8 @@ private:
     std::unique_ptr<FD_Interface> pwm_fd;
     /* For any events (e.g. go switch, manipulator, etc.)*/
     std::unique_ptr<FD_Interface> events_fd;
+    std::unique_ptr<FD_Interface> debug_actual_fd;
+    std::unique_ptr<FD_Interface> debug_setpoint_fd;
 
     rclcpp::Subscription<custom_interfaces::msg::DRR>::SharedPtr drr_subscription;
     rclcpp::Subscription<custom_interfaces::msg::VR>::SharedPtr vr_subscription;
@@ -46,6 +52,11 @@ private:
     rclcpp::Subscription<custom_interfaces::msg::Pwms>::SharedPtr pwm_subscription;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr go_signal_subscription;
     rclcpp::Subscription<custom_interfaces::msg::Command>::SharedPtr mission_manager_command_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::DebugState>::SharedPtr matlab_debug_actual_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::DebugState>::SharedPtr matlab_debug_setpoint_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::DebugFlag>::SharedPtr matlab_debug_flag_0_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::DebugFlag>::SharedPtr matlab_debug_flag_1_subscription;
+    rclcpp::Subscription<custom_interfaces::msg::DebugFlag>::SharedPtr matlab_debug_flag_2_subscription;
 
     void dead_reck_report_received_callback(custom_interfaces::msg::DRR::UniquePtr drr_msg);
     void velocity_report_received_callback(custom_interfaces::msg::VR::UniquePtr vr_msg);
@@ -53,6 +64,10 @@ private:
     void pwm_data_received_callback(custom_interfaces::msg::Pwms::UniquePtr pwm_msg);
     void go_signal_received_callback(std_msgs::msg::Bool::UniquePtr go_signal_msg);
     void command_received_callback(custom_interfaces::msg::Command::UniquePtr command_msg);
+    void write_matlab_debug_state(std::unique_ptr<FD_Interface> fd, custom_interfaces::msg::DebugState);
+    void matlab_debug_actual_received_callback(custom_interfaces::msg::DebugState::UniquePtr debug_msg);
+    void matlab_debug_setpoint_received_callback(custom_interfaces::msg::DebugState::UniquePtr debug_msg);
+    void matlab_debug_flag_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr debug_msg);
 
     std::string get_waypoint_with_mask(custom_interfaces::msg::Command::UniquePtr command_msg);
     std::string get_trick_id(custom_interfaces::msg::Command::UniquePtr command_msg);
