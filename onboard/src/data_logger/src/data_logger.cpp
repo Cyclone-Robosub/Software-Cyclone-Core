@@ -386,8 +386,8 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<FD_Interface> imu_fd = std::make_unique<Data_FD>(filepath + "-imu.csv");
     std::unique_ptr<FD_Interface> pwm_fd = std::make_unique<Data_FD>(filepath + "-pwm.csv");
     std::unique_ptr<FD_Interface> events_fd = std::make_unique<Data_FD>(filepath + "-events.csv");
-    std::unique_ptr<FD_Interface> debug_actual_fd = std::make_unique<Data_FD>(filepath + "-actual_point.csv");
-    std::unique_ptr<FD_Interface> debug_setpoint_fd = std::make_unique<Data_FD>(filepath + "-set_point.csv");
+    std::unique_ptr<FD_Interface> debug_actual_fd = std::make_unique<Data_FD>(filepath + "-matlab_actual_point.csv");
+    std::unique_ptr<FD_Interface> debug_setpoint_fd = std::make_unique<Data_FD>(filepath + "-matlab_set_point.csv");
 
     rclcpp::init(argc, argv);
     auto data_logger = std::make_shared<Data_Logger>(
