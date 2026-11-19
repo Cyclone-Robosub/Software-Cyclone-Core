@@ -35,6 +35,7 @@ public:
                 std::unique_ptr<FD_Interface> debug_actual_fd,
                 std::unique_ptr<FD_Interface> debug_setpoint_fd);
     static std::string get_current_time();
+    static std::string convert_array_to_string(std::array<uint8_t,16> array);
 
 private:
     std::unique_ptr<FD_Interface> drr_fd;
@@ -64,7 +65,7 @@ private:
     void pwm_data_received_callback(custom_interfaces::msg::Pwms::UniquePtr pwm_msg);
     void go_signal_received_callback(std_msgs::msg::Bool::UniquePtr go_signal_msg);
     void command_received_callback(custom_interfaces::msg::Command::UniquePtr command_msg);
-    void write_matlab_debug_state(std::unique_ptr<FD_Interface> fd, custom_interfaces::msg::DebugState);
+    void write_matlab_debug_state(int fd, custom_interfaces::msg::DebugState::UniquePtr debug_msg);
     void matlab_debug_actual_received_callback(custom_interfaces::msg::DebugState::UniquePtr debug_msg);
     void matlab_debug_setpoint_received_callback(custom_interfaces::msg::DebugState::UniquePtr debug_msg);
     void matlab_debug_flag_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr debug_msg);

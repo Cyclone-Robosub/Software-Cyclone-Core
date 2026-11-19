@@ -214,6 +214,47 @@ void Data_Logger::go_signal_received_callback(std_msgs::msg::Bool::UniquePtr go_
     events_log_mutex.unlock();
 }
 
+void Data_Logger::write_matlab_debug_state(int fd, custom_interfaces::msg::DebugState::UniquePtr debug_msg) {
+    std::string log_data = Data_Logger::get_current_time();
+
+    log_data += "," + std::to_string(debug_msg->position.x);
+    log_data += "," + std::to_string(debug_msg->position.y);
+    log_data += "," + std::to_string(debug_msg->position.z);
+    log_data += "," + std::to_string(debug_msg->orientation.x);
+    log_data += "," + std::to_string(debug_msg->orientation.y);
+    log_data += "," + std::to_string(debug_msg->orientation.z);
+    log_data += "," + std::to_string(debug_msg->velocity.x);
+    log_data += "," + std::to_string(debug_msg->velocity.y);
+    log_data += "," + std::to_string(debug_msg->velocity.z);
+    log_data += "," + std::to_string(debug_msg->angular_velocity.x);
+    log_data += "," + std::to_string(debug_msg->angular_velocity.y);
+    log_data += "," + std::to_string(debug_msg->angular_velocity.z);
+    log_data += "\n";
+
+    write(fd, log_data.c_str(), log_data.length());
+}
+
+void Data_Logger::matlab_debug_actual_received_callback(custom_interfaces::msg::DebugState::UniquePtr debug_msg) {
+    write_matlab_debug_state(debug_actual_fd->get_write_fd(), std::move(debug_msg));
+}
+
+void Data_Logger::matlab_debug_setpoint_received_callback(custom_interfaces::msg::DebugState::UniquePtr debug_msg) {
+    write_matlab_debug_state(debug_setpoint_fd->get_write_fd(), std::move(debug_msg));
+}
+
+void Data_Logger::matlab_debug_flag_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr debug_msg) {
+    std::string log_data = Data_Logger::get_current_time();
+
+    log_data += ",debug_flag";
+    log_data += "," + Data_Logger::convert_array_to_string(debug_msg->name);
+    log_data += "," + std::to_string(debug_msg->value);
+    log_data += "\n";
+
+    events_log_mutex.lock();
+    write(events_fd->get_write_fd(), log_data.c_str(), log_data.length());
+    events_log_mutex.unlock();
+}
+
 std::string Data_Logger::get_waypoint_with_mask(custom_interfaces::msg::Command::UniquePtr command_msg) {
     std::string waypoint = "";
     auto pose_6d = command_msg->position;
@@ -310,6 +351,19 @@ std::string Data_Logger::get_current_time() {
     return cpp_time;
 }
 
+std::string Data_Logger::convert_array_to_string(std::array<uint8_t,16> array) {
+    std::string retval = "";
+    for (int i = 0; i < 16; i++) {
+        uint8_t current = array[i];
+        if (!isprint(current)) {
+            break;
+        }
+        retval.push_back((char)current);
+    }
+
+    return retval;
+}
+
 Data_FD::Data_FD(std::string path) : Path_FD(path) {
     fd = open_file();
 }
@@ -332,6 +386,8 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<FD_Interface> imu_fd = std::make_unique<Data_FD>(filepath + "-imu.csv");
     std::unique_ptr<FD_Interface> pwm_fd = std::make_unique<Data_FD>(filepath + "-pwm.csv");
     std::unique_ptr<FD_Interface> events_fd = std::make_unique<Data_FD>(filepath + "-events.csv");
+    std::unique_ptr<FD_Interface> debug_actual_fd = std::make_unique<Data_FD>(filepath + "-actual_point.csv");
+    std::unique_ptr<FD_Interface> debug_setpoint_fd = std::make_unique<Data_FD>(filepath + "-set_point.csv");
 
     rclcpp::init(argc, argv);
     auto data_logger = std::make_shared<Data_Logger>(
@@ -339,7 +395,9 @@ int main(int argc, char* argv[]) {
         std::move(vr_fd),
         std::move(imu_fd),
         std::move(pwm_fd),
-        std::move(events_fd));
+        std::move(events_fd),
+        std::move(debug_actual_fd),
+        std::move(debug_setpoint_fd));
     rclcpp::spin(data_logger);
     
     rclcpp::shutdown();
