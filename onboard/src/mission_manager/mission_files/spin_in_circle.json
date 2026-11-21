@@ -1,0 +1,11 @@
+{
+    "commands": [
+       {
+            "reference": "spin",
+            "global_reference": "spin_in_circle"
+        }
+    ],
+    "tree": {
+        "ref": "spin"
+    }
+}
