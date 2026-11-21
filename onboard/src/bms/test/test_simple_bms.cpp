@@ -85,9 +85,12 @@ protected:
     * 
     * @param data_type The data type of the serial message
     */
-    void write_serial_message(std::string message){
-        size_t length = message.size();
-        write(read_pipe_fds[1], message.c_str(), length);
+    void write_serial_message(int16_t value){
+        int16_t reverse_value;
+        int8_t left_bit = (value >> 8) & 0b11111111;
+        int8_t right_bit = value & 0b11111111;
+        reverse_value = (right_bit << 8) | left_bit;
+        write(read_pipe_fds[1], &reverse_value, sizeof(reverse_value));
     }
 
     void bms_callback(custom_interfaces::msg::Battery::UniquePtr bms_msg) {
@@ -124,11 +127,38 @@ TEST_F(TestSimpleBMS, BMSConstruction) {
 }
 TEST_F(TestSimpleBMS, TestReadings) {
     create_node_with_params();
-    write_serial_message("10");
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(node);
 
-    ASSERT_EQ(voltage_reading, 10);
-    write_serial_message("20");
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    write_serial_message(10);
+
+    auto start_time = std::chrono::steady_clock::now();
+    auto deadline = start_time + std::chrono::milliseconds(25);
+    while (std::chrono::steady_clock::now() < deadline) {
+          executor.spin_some();
+    }
+    read_serial_output(100000);
+    ASSERT_EQ(voltage_reading, 10 * 0.00224452072881);
+    
+    write_serial_message(20);
+    
+    start_time = std::chrono::steady_clock::now();
+    deadline = start_time + std::chrono::milliseconds(25);
+    while (std::chrono::steady_clock::now() < deadline) {
+          executor.spin_some();
+    }
+
     ASSERT_EQ(current_reading, 20);
+    executor.cancel();
 }
+
+#ifdef ENABLE_TESTING
+/**
+ * @brief Main test runner
+ */
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
+#endif

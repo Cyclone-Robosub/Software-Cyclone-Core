@@ -6,7 +6,7 @@ SimpleBMS::SimpleBMS (std::unique_ptr<FD_Interface> bms_fd) :
     Node("simple_bms"),
     bms_fd(std::move(bms_fd)) 
 {   
-    std::cout << "1" << std::endl;
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 1);
     /*
     if (init_i2c()){
         // Timer to check voltage & current values at a frequency of 100 hz
@@ -36,7 +36,7 @@ SimpleBMS::~SimpleBMS() {
 
 bool SimpleBMS::init_i2c() {
     // Open and connect to the ADC
-    std::cout << "Hi" << std::endl;
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 2);
     i2c_fd = open(I2C_FD, O_RDWR);
     
     if (i2c_fd < 0) {
@@ -52,12 +52,14 @@ bool SimpleBMS::init_i2c() {
 }
 
 bool SimpleBMS::config_i2c(SimpleBMS::ConfigValues conf){
-    std::cout << "hi" << std::endl;
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 3);
+    /*
     uint8_t config[3];
     config[0] = conf.conf_reg;
     config[1] = conf.lsb;
     config[2] = conf.msb;
 
+   
     if (write(bms_fd->get_write_fd(), config, 3) != 3) {
         std::cout << "error: Could not write to config" << std::endl;
         return false;
@@ -72,19 +74,19 @@ bool SimpleBMS::config_i2c(SimpleBMS::ConfigValues conf){
         std::cerr << "error: Failed to set pointer to conversion register" << std::endl;
         return false;
     }
+    */
     return true;
 }
 
 // contains all function calls that should be performed 
 void SimpleBMS::bms_callback() {
     // FIXME add a variable here for safety to make sure it is on the correct i2c configuration
-
+     RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 4);
     SimpleBMS::BatteryStatus status = {0.0f,0.0f};
 
     // read voltage. i2c is configured to read voltage upon init and at the end of the bms_callback here 
     status.voltage = readBMS(true);
     
-
     // configure and read current
     if (!config_i2c(CURRENT_CONFIG)) return; // No need for an error message here; that is handled in config_current
     status.current = readBMS(false);
@@ -100,18 +102,20 @@ void SimpleBMS::bms_callback() {
 
 float SimpleBMS::readBMS(bool isVoltage) {
     // Get reading from sensor. This will either be Voltage on pin A0 or current on pin A1, depending on how it was configured before this function was called
-
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 5);
     uint8_t output[2];
     if (read(bms_fd->get_read_fd(), output, 2) != 2) {
-        std::cout << "Error: Could not read from conversion register" << std::endl;
-        return 0.0f;
+        //std::cout << "Error: Could not read from conversion register" << std::endl;
+        //return 0.0f;
     }
     // reconstruct value from output, using the relevant scalar depending on whether it is reading current or voltage
     int16_t combined_out = (output[0] << 8) | output[1];
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", combined_out);
     return combined_out * ((isVoltage)? 0.00224452072881f : 1.0f);
 }
 
 void SimpleBMS::publish_bms(SimpleBMS::BatteryStatus status) {
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 6);
     auto bms = custom_interfaces::msg::Battery();
     bms.voltage = status.voltage;
     bms.current = status.current;
@@ -124,7 +128,7 @@ ADC_FD::ADC_FD (std::string path) : Path_FD(path) {
 
 int ADC_FD::open_file() {
     int fd;
-    std::cout << "hiii" << std::endl;
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 10);
     if ((fd = open(path.c_str(), O_RDWR)) == -1) {
         return -1;
     }
@@ -138,7 +142,7 @@ int ADC_FD::open_file() {
 }
 
 bool ADC_FD::config(int fd, ConfigValues conf) {
-    std::cout << "hi2" << std::endl;
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 11);
     uint8_t config[3];
     config[0] = conf.conf_reg;
     config[1] = conf.lsb;
