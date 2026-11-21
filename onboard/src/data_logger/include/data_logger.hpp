@@ -33,7 +33,8 @@ public:
                 std::unique_ptr<FD_Interface> pwm_fd,
                 std::unique_ptr<FD_Interface> events_fd,
                 std::unique_ptr<FD_Interface> debug_actual_fd,
-                std::unique_ptr<FD_Interface> debug_setpoint_fd);
+                std::unique_ptr<FD_Interface> debug_setpoint_fd,
+                std::unique_ptr<FD_Interface> flags_fd);
     static std::string get_current_time();
     static std::string convert_array_to_string(std::array<uint8_t,16> array);
 
@@ -46,6 +47,7 @@ private:
     std::unique_ptr<FD_Interface> events_fd;
     std::unique_ptr<FD_Interface> debug_actual_fd;
     std::unique_ptr<FD_Interface> debug_setpoint_fd;
+    std::unique_ptr<FD_Interface> flags_fd;
 
     rclcpp::Subscription<custom_interfaces::msg::DRR>::SharedPtr drr_subscription;
     rclcpp::Subscription<custom_interfaces::msg::VR>::SharedPtr vr_subscription;
@@ -74,6 +76,7 @@ private:
     std::string get_trick_id(custom_interfaces::msg::Command::UniquePtr command_msg);
 
     std::mutex events_log_mutex;
+    std::mutex flags_log_mutex;
 };
 
 #endif // DATA_LOGGER_HPP

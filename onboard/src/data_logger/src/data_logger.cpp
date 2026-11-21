@@ -5,13 +5,14 @@ using namespace rclcpp;
 #include <iostream>
 #include <sys/time.h>
 
-Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd, 
+Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
                          std::unique_ptr<FD_Interface> vr_fd,
                          std::unique_ptr<FD_Interface> imu_fd,
                          std::unique_ptr<FD_Interface> pwm_fd,
                          std::unique_ptr<FD_Interface> events_fd,
-                        std::unique_ptr<FD_Interface> debug_actual_fd,
-                        std::unique_ptr<FD_Interface> debug_setpoint_fd) :
+                         std::unique_ptr<FD_Interface> debug_actual_fd,
+                         std::unique_ptr<FD_Interface> debug_setpoint_fd,
+                         std::unique_ptr<FD_Interface> flags_fd) :
     Node("data_logger"),
     drr_fd(std::move(drr_fd)),
     vr_fd(std::move(vr_fd)),
@@ -19,7 +20,8 @@ Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
     pwm_fd(std::move(pwm_fd)),
     events_fd(std::move(events_fd)),
     debug_actual_fd(std::move(debug_actual_fd)),
-    debug_setpoint_fd(std::move(debug_setpoint_fd))
+    debug_setpoint_fd(std::move(debug_setpoint_fd)),
+    flags_fd(std::move(flags_fd))
      {
     drr_subscription = this->create_subscription<custom_interfaces::msg::DRR>(
         "dead_reck_report", 1, 
@@ -70,6 +72,7 @@ Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
     std::string pwm_header = "time,thruster_0,thruster_1,thruster_2,thruster_3,thruster_4,thruster_5,thruster_6,thruster_7\n";
     std::string events_header = "time,event,extra_0,extra_1\n";
     std::string debug_state_header = "time,xi,yi,zi,roll,pitch,yaw,vbx,vby,vbz,wbx,wby,wbz\n";
+    std::string flags_header = "time,flag_name,flag_value\n";
     write(this->drr_fd->get_write_fd(), drr_header.c_str(), drr_header.length());
     write(this->vr_fd->get_write_fd(), vr_header.c_str(), vr_header.length());
     write(this->imu_fd->get_write_fd(), imu_header.c_str(), imu_header.length());
@@ -77,6 +80,7 @@ Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
     write(this->events_fd->get_write_fd(), events_header.c_str(), events_header.length());
     write(this->debug_actual_fd->get_write_fd(), debug_state_header.c_str(), debug_state_header.length());
     write(this->debug_setpoint_fd->get_write_fd(), debug_state_header.c_str(), debug_state_header.length());
+    write(this->flags_fd->get_write_fd(), flags_header.c_str(), flags_header.length());
 }
 
 void Data_Logger::dead_reck_report_received_callback(custom_interfaces::msg::DRR::UniquePtr drr_msg) {
@@ -245,14 +249,13 @@ void Data_Logger::matlab_debug_setpoint_received_callback(custom_interfaces::msg
 void Data_Logger::matlab_debug_flag_received_callback(custom_interfaces::msg::DebugFlag::UniquePtr debug_msg) {
     std::string log_data = Data_Logger::get_current_time();
 
-    log_data += ",debug_flag";
     log_data += "," + Data_Logger::convert_array_to_string(debug_msg->name);
     log_data += "," + std::to_string(debug_msg->value);
     log_data += "\n";
 
-    events_log_mutex.lock();
-    write(events_fd->get_write_fd(), log_data.c_str(), log_data.length());
-    events_log_mutex.unlock();
+    flags_log_mutex.lock();
+    write(flags_fd->get_write_fd(), log_data.c_str(), log_data.length());
+    flags_log_mutex.unlock();
 }
 
 std::string Data_Logger::get_waypoint_with_mask(custom_interfaces::msg::Command::UniquePtr command_msg) {
@@ -388,6 +391,7 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<FD_Interface> events_fd = std::make_unique<Data_FD>(filepath + "-events.csv");
     std::unique_ptr<FD_Interface> debug_actual_fd = std::make_unique<Data_FD>(filepath + "-matlab_actual_point.csv");
     std::unique_ptr<FD_Interface> debug_setpoint_fd = std::make_unique<Data_FD>(filepath + "-matlab_set_point.csv");
+    std::unique_ptr<FD_Interface> flags_fd = std::make_unique<Data_FD>(filepath + "-matlab_flags.csv");
 
     rclcpp::init(argc, argv);
     auto data_logger = std::make_shared<Data_Logger>(
@@ -397,7 +401,8 @@ int main(int argc, char* argv[]) {
         std::move(pwm_fd),
         std::move(events_fd),
         std::move(debug_actual_fd),
-        std::move(debug_setpoint_fd));
+        std::move(debug_setpoint_fd),
+        std::move(flags_fd));
     rclcpp::spin(data_logger);
     
     rclcpp::shutdown();
