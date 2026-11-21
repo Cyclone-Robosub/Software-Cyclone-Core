@@ -4,6 +4,7 @@ using namespace std::chrono_literals;
 using namespace rclcpp;
 #include <iostream>
 #include <sys/time.h>
+#include <filesystem>
 
 Data_Logger::Data_Logger(std::unique_ptr<FD_Interface> drr_fd,
                          std::unique_ptr<FD_Interface> vr_fd,
@@ -381,9 +382,12 @@ int Data_FD::open_file() {
 #ifndef ENABLE_TESTING
 
 int main(int argc, char* argv[]) {
+    auto current_time = Data_Logger::get_current_time();
     std::string filepath = getenv("HOME");
     filepath += "/Robosub/Data/";
-    filepath += Data_Logger::get_current_time();
+    filepath += current_time;
+    std::filesystem::create_directories(filepath);
+    filepath += "/" + current_time;
     std::unique_ptr<FD_Interface> drr_fd = std::make_unique<Data_FD>(filepath + "-dvl-drr.csv");
     std::unique_ptr<FD_Interface> vr_fd = std::make_unique<Data_FD>(filepath + "-dvl-vr.csv");
     std::unique_ptr<FD_Interface> imu_fd = std::make_unique<Data_FD>(filepath + "-imu.csv");
