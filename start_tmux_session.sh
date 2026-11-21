@@ -23,7 +23,7 @@ if [[ ! -f /opt/ros/jazzy/setup.bash ]]; then
 	exit # Don't run the script again after we're done
 fi
 
-PROJECT_DIR=$(find ~ -name "Software-Cyclone-Core" 2> /dev/null)
+PROJECT_DIR=$(find ~ -maxdepth 3 -name "Software-Cyclone-Core" 2> /dev/null)
 cd $PROJECT_DIR
 
 source install/setup.sh
