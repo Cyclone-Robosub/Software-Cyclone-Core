@@ -53,13 +53,12 @@ bool SimpleBMS::init_i2c() {
 
 bool SimpleBMS::config_i2c(SimpleBMS::ConfigValues conf){
     RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 3);
-    /*
+    
     uint8_t config[3];
     config[0] = conf.conf_reg;
     config[1] = conf.lsb;
     config[2] = conf.msb;
 
-   
     if (write(bms_fd->get_write_fd(), config, 3) != 3) {
         std::cout << "error: Could not write to config" << std::endl;
         return false;
@@ -74,7 +73,7 @@ bool SimpleBMS::config_i2c(SimpleBMS::ConfigValues conf){
         std::cerr << "error: Failed to set pointer to conversion register" << std::endl;
         return false;
     }
-    */
+
     return true;
 }
 
@@ -105,20 +104,23 @@ float SimpleBMS::readBMS(bool isVoltage) {
     RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 5);
     uint8_t output[2];
     if (read(bms_fd->get_read_fd(), output, 2) != 2) {
-        //std::cout << "Error: Could not read from conversion register" << std::endl;
+        std::cout << "Error: Could not read from conversion register" << std::endl;
         //return 0.0f;
     }
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Left: %d", output[0]);
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Right: %d", output[1]);
     // reconstruct value from output, using the relevant scalar depending on whether it is reading current or voltage
     int16_t combined_out = (output[0] << 8) | output[1];
-    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", combined_out);
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "%d", combined_out);
     return combined_out * ((isVoltage)? 0.00224452072881f : 1.0f);
 }
 
 void SimpleBMS::publish_bms(SimpleBMS::BatteryStatus status) {
-    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Value: %d", 6);
     auto bms = custom_interfaces::msg::Battery();
     bms.voltage = status.voltage;
     bms.current = status.current;
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Voltage Value: %f", bms.voltage);
+    RCLCPP_INFO(rclcpp::get_logger("gtest"), "Current Value: %f", bms.current);
     this->bms_publisher->publish(std::make_unique<custom_interfaces::msg::Battery>(bms));
 }
 

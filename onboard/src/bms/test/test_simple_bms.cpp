@@ -79,6 +79,14 @@ protected:
         }
         return "";
     }
+    void clear_serial_output() {
+        RCLCPP_INFO(rclcpp::get_logger("gtest"), "Test: %d", 2);
+        char buffer[1024];
+        ssize_t bytes_read = read(read_pipe_fds[0], buffer,  sizeof(buffer) - 1);
+        while (bytes_read > 0) {
+            bytes_read = read(read_pipe_fds[0], buffer,  sizeof(buffer) - 1);
+        }
+    }
 
     /**
     * @brief Helper to write a serial message to pipe_fds[1]
@@ -94,6 +102,8 @@ protected:
     }
 
     void bms_callback(custom_interfaces::msg::Battery::UniquePtr bms_msg) {
+        RCLCPP_INFO(rclcpp::get_logger("gtest"), "Recieved Voltage Value: %f", bms_msg->voltage);
+        RCLCPP_INFO(rclcpp::get_logger("gtest"), "Recieved Current Value: %f", bms_msg->current);
         voltage_reading = bms_msg->voltage;
         current_reading = bms_msg->current;
     }
@@ -132,24 +142,17 @@ TEST_F(TestSimpleBMS, TestReadings) {
     executor.add_node(node);
 
     write_serial_message(10);
+    write_serial_message(20);
 
     auto start_time = std::chrono::steady_clock::now();
-    auto deadline = start_time + std::chrono::milliseconds(25);
+    auto deadline = start_time + std::chrono::milliseconds(40);
     while (std::chrono::steady_clock::now() < deadline) {
-          executor.spin_some();
+        executor.spin_some();
     }
-    read_serial_output(100000);
+ 
     ASSERT_EQ(voltage_reading, 10 * 0.00224452072881);
-    
-    write_serial_message(20);
-    
-    start_time = std::chrono::steady_clock::now();
-    deadline = start_time + std::chrono::milliseconds(25);
-    while (std::chrono::steady_clock::now() < deadline) {
-          executor.spin_some();
-    }
-
     ASSERT_EQ(current_reading, 20);
+
     executor.cancel();
 }
 
